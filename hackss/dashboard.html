@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PULSE — Dashboard</title>
+    <meta name="description" content="PULSE — Emergency SOS & Disaster Response platform." />
+    <link rel="stylesheet" href="dashboard.css" />
+</head>
+
+<body>
+
+    <div class="dash">
+
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar__left">
+                <span class="topbar__logo">🛡️</span>
+                <span class="topbar__brand">PULSE</span>
+            </div>
+            <div class="topbar__right">
+                <span class="topbar__status"><span class="topbar__dot"></span> OPERATIONAL</span>
+                <button class="topbar__bell" aria-label="Notifications">🔔<span class="topbar__badge">3</span></button>
+                <div class="topbar__user">
+                    <img class="topbar__avatar"
+                        src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop&crop=faces"
+                        alt="" />
+                    <span class="topbar__name">Alex Mercer</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="content">
+
+            <!-- Left Column -->
+            <section class="col col--left">
+
+                <!-- Identity -->
+                <div class="id-card">
+                    <div class="id-card__avatar">
+                        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&h=160&fit=crop&crop=faces"
+                            alt="" />
+                    </div>
+                    <h2 class="id-card__name">Alex Mercer</h2>
+                    <span class="id-card__tier" id="user-tier">Field Responder</span>
+                    <div class="id-card__badge" id="verification-badge">
+                        <span>🔒</span> VERIFICATION PENDING
+                    </div>
+                </div>
+
+                <!-- Stats Row -->
+                <div class="stats">
+                    <div class="stat"><span class="stat__val" id="user-credits">240</span><span
+                            class="stat__lbl">Credits</span></div>
+                    <div class="stat"><span class="stat__val" id="user-missions">12</span><span
+                            class="stat__lbl">Missions</span></div>
+                    <div class="stat"><span class="stat__val" id="user-rank">#47</span><span
+                            class="stat__lbl">Rank</span></div>
+                </div>
+
+                <!-- Progress -->
+                <div class="progress-section">
+                    <div class="progress-ring">
+                        <svg viewBox="0 0 100 100">
+                            <circle class="progress-ring__track" cx="50" cy="50" r="42" />
+                            <circle class="progress-ring__fill" id="progress-fill" cx="50" cy="50" r="42"
+                                stroke-dasharray="263.9" stroke-dashoffset="263.9" />
+                        </svg>
+                        <div class="progress-ring__center">
+                            <span class="progress-ring__pct" id="progress-pct">62%</span>
+                            <span class="progress-ring__lbl">READINESS</span>
+                        </div>
+                    </div>
+                    <p class="progress-next">Next: <strong id="next-tier">Ops Coordinator</strong></p>
+                </div>
+
+            </section>
+
+            <!-- Right Column -->
+            <section class="col col--right">
+
+                <!-- Alerts -->
+                <div class="panel">
+                    <h3 class="panel__title">🚨 Active Alerts</h3>
+                    <div class="alerts" id="alerts-list"></div>
+                </div>
+
+                <!-- Actions -->
+                <div class="panel">
+                    <h3 class="panel__title">⚡ Quick Actions</h3>
+
+                    <!-- Quiz CTA -->
+                    <button class="hover-btn" id="btn-quiz" onclick="window.location.href='/'">
+                        <span class="hover-btn__default">🎯 TAKE ASSESSMENT</span>
+                        <span class="hover-btn__reveal">PROVE YOU'RE READY →</span>
+                    </button>
+
+                    <div class="actions">
+                        <a class="act" href="#store"><span class="act__icon">🏪</span><span>Store</span></a>
+                        <a class="act" href="#profile"><span class="act__icon">👤</span><span>Profile</span></a>
+                        <a class="act" href="#alerts"><span class="act__icon">📡</span><span>Alerts</span></a>
+                        <a class="act" href="#map"><span class="act__icon">🗺️</span><span>Map</span></a>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+
+</html>
