@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pulse — Contact Us</title>
+  <meta name="description"
+    content="Get in touch with Pulse — hyper-local safety and volunteer response platform. We'd love to hear from you." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/contact-us/styles.css" />
+</head>
+
+<body>
+
+  <header class="site-header">
+    <div class="nav-brand">
+      <span class="nav-hex">⬡</span>
+      <span class="nav-logo">PULSE</span>
+    </div>
+    <nav class="nav-links">
+      <a href="/" class="nav-link">Home</a>
+    </nav>
+  </header>
+
+  <!-- 3D Background Canvas -->
+  <div id="bg3d"></div>
+  <div id="bg-overlay"></div>
+
+  <!-- ═══════════ HERO ═══════════ -->
+  <section class="hero" id="hero">
+    <div class="hero-inner">
+      <div class="reactive-heading" id="reactiveHeading"></div>
+      <div class="underline-wrap">
+        <div class="animated-underline"></div>
+      </div>
+      <p class="hero-subtitle anim-fade" data-delay="500">We'd love to hear from you.</p>
+    </div>
+    <div class="scroll-indicator anim-fade" data-delay="1500">
+      <div class="scroll-mouse">
+        <div class="scroll-dot"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ CONTACT SECTION ═══════════ -->
+  <section class="contact-section">
+    <div class="contact-grid">
+
+      <!-- LEFT — Form -->
+      <div class="glass-card form-card anim-section" data-anim="fade-up">
+        <form id="contactForm">
+          <div class="form-group anim-child">
+            <input type="text" id="nameInput" required />
+            <label for="nameInput">Name</label>
+          </div>
+          <div class="form-group anim-child">
+            <input type="email" id="emailInput" required />
+            <label for="emailInput">Email</label>
+          </div>
+          <div class="form-group anim-child">
+            <input type="text" id="subjectInput" required />
+            <label for="subjectInput">Subject</label>
+          </div>
+          <div class="form-group anim-child">
+            <textarea id="messageInput" rows="5" required></textarea>
+            <label for="messageInput">Message</label>
+          </div>
+          <button type="submit" class="submit-btn anim-child">
+            <span class="btn-shimmer"></span>
+            <span class="btn-text">Send Message</span>
+          </button>
+        </form>
+        <!-- Success state -->
+        <div class="form-success" id="formSuccess" style="display:none;">
+          <div class="success-icon">✓</div>
+          <h3>Message Sent</h3>
+          <p>We'll get back to you shortly.</p>
+        </div>
+      </div>
+
+      <!-- RIGHT — Text -->
+      <div class="text-column anim-section" data-anim="fade-up">
+        <h2 class="section-heading anim-child">
+          Let's Start a <span class="gold">Conversation</span>
+        </h2>
+        <p class="section-text anim-child">
+          Whether you're reporting an issue, joining as a volunteer, or helping us
+          build safer communities — Pulse connects people when it matters most.
+        </p>
+        <p class="section-text muted anim-child">
+          Your feedback drives real change. Every message helps us strengthen the
+          safety network in your neighborhood and create a more resilient community.
+        </p>
+        <div class="deco-line anim-child"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══════════ CONTACT INFO ROW ═══════════ -->
+  <section class="info-section">
+    <div class="info-grid anim-section" data-anim="stagger">
+      <div class="glass-card info-card anim-child">
+        <div class="info-icon">✉</div>
+        <h3 class="info-title">Email</h3>
+        <p class="info-value">theendermenofficial@gmail.com</p>
+      </div>
+      <div class="glass-card info-card anim-child">
+        <div class="info-icon">☏</div>
+        <h3 class="info-title">Phone</h3>
+        <p class="info-value">+91 88XXXXXXXX</p>
+      </div>
+      <div class="glass-card info-card anim-child">
+        <div class="info-icon">⌖</div>
+        <h3 class="info-title">Address</h3>
+        <p class="info-value">VIT Chennai</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════ FOOTER ═══════════ -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-top">
+        <div class="footer-left anim-section" data-anim="fade-up">
+          <h2 class="footer-heading anim-child">Let's <span class="gold">Talk</span></h2>
+          <div class="footer-line anim-child"></div>
+        </div>
+        <div class="footer-right anim-section" data-anim="fade-up">
+          <p class="anim-child">theendermenofficial@gmail.com</p>
+          <p class="anim-child">+91 88XXXXXXXX</p>
+          <p class="anim-child">VIT Chennai</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 Pulse. All rights reserved.</p>
+        <p>Safety for everyone, everywhere.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Three.js via CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="/contact-us/script.js"></script>
+</body>
+
+</html>

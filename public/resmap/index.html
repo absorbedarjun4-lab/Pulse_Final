@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pulse — Resource Mapping</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <meta name="description"
+        content="Find shelters, hospitals, and emergency support near you with Pulse Resource Mapping." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-color: #020408;
+            --midnight: #0a1128;
+            --midnight-deep: #050a18;
+            --midnight-light: #152248;
+            --champagne: #F7D794;
+            --dusty-rose: #EDA6A3;
+            --pearl: #FCFBFB;
+
+            --card-bg: rgba(10, 20, 40, 0.4);
+            --accent-primary: var(--champagne);
+            --accent-secondary: var(--dusty-rose);
+            --accent-success: #b8e994;
+            --accent-warn: #f7d794;
+            --accent-glow: rgba(247, 215, 148, 0.15);
+            --text-main: var(--pearl);
+            --text-dim: rgba(252, 251, 251, 0.5);
+            --glass-border: rgba(252, 251, 251, 0.08);
+            --font-main: 'Inter', system-ui, -apple-system, sans-serif;
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --shadow-premium: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--midnight-deep);
+            color: var(--text-main);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            letter-spacing: -0.011em;
+            line-height: 1.5;
+        }
+
+        ::selection {
+            background: rgba(74, 158, 255, 0.35);
+            color: var(--pearl);
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(74, 158, 255, 0.25);
+            border-radius: 99px;
+        }
+
+        /* ═══════════════════════════════════
+       NAVBAR
+       ═══════════════════════════════════ */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: 18px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.4s ease, backdrop-filter 0.4s ease;
+        }
+
+        .navbar.scrolled {
+            background: rgba(5, 13, 26, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(74, 158, 255, 0.08);
+        }
+
+        .nav-brand {
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: var(--pearl);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            box-shadow: 0 0 12px rgba(247, 215, 148, 0.6), 0 0 30px rgba(247, 215, 148, 0.2);
+            animation: navPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes navPulse {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.6;
+                transform: scale(1.3);
+            }
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 28px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: rgba(252, 251, 251, 0.5);
+            text-decoration: none;
+            transition: color 0.3s ease;
+            letter-spacing: 0.02em;
+        }
+
+        .nav-links a:hover {
+            color: var(--champagne);
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+        }
+
+        /* ═══════════════════════════════════
+       3D BACKGROUND
+       ═══════════════════════════════════ */
+        #bg3d {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        #bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse at 50% 80%, transparent 0%, rgba(5, 10, 24, 0.6) 50%, rgba(5, 10, 24, 0.95) 100%),
+                linear-gradient(to bottom, rgba(5, 10, 24, 0.5) 0%, transparent 30%, transparent 60%, rgba(5, 10, 24, 0.8) 100%);
+        }
+
+        .bg-vignette,
+        .bg-scanlines {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-vignette {
+            background: radial-gradient(circle at center, transparent 0%, rgba(2, 4, 8, 0.4) 100%);
+        }
+
+        .bg-scanlines {
+            opacity: 0.03;
+            background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(247, 215, 148, 0.02) 2px, rgba(247, 215, 148, 0.02) 4px);
+        }
+
+        /* ═══════════════════════════════════
+       HERO SECTION (realfood.gov style)
+       ═══════════════════════════════════ */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 24px 80px;
+            z-index: 2;
+            overflow: hidden;
+        }
+
+        .hero-eyebrow {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.25em;
+            color: var(--accent-secondary);
+            margin-bottom: 24px;
+            opacity: 0;
+            transform: translateY(20px);
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .hero-title {
+            font-size: clamp(3rem, 10vw, 7rem);
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 0.95;
+            margin-bottom: 28px;
+            opacity: 0;
+            transform: translateY(40px);
+        }
+
+        .hero-title .line {
+            display: block;
+        }
+
+        .hero-title .accent {
+            background: linear-gradient(135deg, var(--champagne), var(--dusty-rose));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 30px var(--accent-glow));
+        }
+
+        .hero-sub {
+            font-size: clamp(1rem, 2.5vw, 1.35rem);
+            font-weight: 300;
+            color: rgba(252, 251, 251, 0.5);
+            max-width: 560px;
+            line-height: 1.6;
+            margin-bottom: 40px;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, var(--champagne), #eec06b);
+            color: var(--midnight-deep);
+            font-weight: 800;
+            font-size: 0.9rem;
+            border-radius: 60px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            font-family: inherit;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            box-shadow: 0 4px 30px rgba(247, 215, 148, 0.3), 0 0 60px rgba(247, 215, 148, 0.1);
+        }
+
+        .hero-cta:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 8px 40px var(--accent-glow), 0 0 80px rgba(247, 215, 148, 0.1);
+            background: linear-gradient(135deg, #FFD072, var(--champagne));
+        }
+
+        .hero-scroll-hint {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+        }
+
+        .hero-scroll-hint span {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: rgba(252, 251, 251, 0.25);
+        }
+
+        .scroll-line {
+            width: 1px;
+            height: 40px;
+            background: linear-gradient(to bottom, var(--accent-primary), transparent);
+            animation: scrollPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes scrollPulse {
+
+            0%,
+            100% {
+                opacity: 0.5;
+                transform: scaleY(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scaleY(1.2);
+            }
+        }
+
+        /* ═══════════════════════════════════
+       SECTION COMMON
+       ═══════════════════════════════════ */
+        .section {
+            position: relative;
+            z-index: 2;
+            padding: 0 24px;
+        }
+
+        .max-w {
+            max-width: 80rem;
+            margin: 0 auto;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--accent-secondary);
+            margin-bottom: 16px;
+            text-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        /* ═══════════════════════════════════
+       MAP SECTION
+       ═══════════════════════════════════ */
+        .map-section {
+            padding-top: 0;
+            padding-bottom: 60px;
+        }
+
+        .map-header {
+            margin-bottom: 32px;
+        }
+
+        .map-header h2 {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            margin-bottom: 12px;
+        }
+
+        .map-header p {
+            font-size: 1rem;
+            color: rgba(252, 251, 251, 0.45);
+            font-weight: 300;
+            max-width: 500px;
+        }
+
+        .map-container {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--glass-border), 0 0 60px rgba(247, 215, 148, 0.05);
+        }
+
+        #map {
+            height: 75vh;
+            width: 100%;
+            background: var(--navy-deep);
+        }
+
+        /* ═══════════════════════════════════
+       GLASS PANELS
+       ═══════════════════════════════════ */
+        .glass {
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        /* ── Filter Panel ── */
+        .filter-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 500;
+            width: 320px;
+            padding: 24px;
+            border-radius: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .filter-panel {
+                position: fixed;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                border-radius: 20px 20px 0 0;
+                z-index: 700;
+                transform: translateY(100%);
+                opacity: 0;
+                transition: transform 0.4s cubic-bezier(.4, 0, .2, 1), opacity 0.4s ease;
+                max-height: 70vh;
+                overflow-y: auto;
+            }
+
+            .filter-panel.open {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .f-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: var(--accent-primary);
+            text-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .f-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: rgba(252, 251, 251, 0.3);
+            margin-bottom: 8px;
+        }
+
+        .cat-btn {
+            padding: 6px 13px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            color: rgba(252, 251, 251, 0.5);
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: inherit;
+        }
+
+        .cat-btn:hover {
+            background: rgba(247, 215, 148, 0.08);
+            border-color: rgba(247, 215, 148, 0.25);
+            color: var(--accent-primary);
+        }
+
+        .cat-btn.active {
+            background: rgba(247, 215, 148, 0.12);
+            border-color: var(--accent-primary);
+            color: var(--accent-primary);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .search-wrap {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-wrap svg {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 14px;
+            height: 14px;
+            stroke: rgba(252, 251, 251, 0.3);
+            fill: none;
+        }
+
+        .search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 10px 14px 10px 34px;
+            font-size: 0.8rem;
+            color: var(--pearl);
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input::placeholder {
+            color: rgba(252, 251, 251, 0.2);
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-glow);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }
+
+        .range-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 99px;
+            outline: none;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+            border: 2px solid var(--midnight-deep);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-track {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 99px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-track::before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 16px;
+            height: 16px;
+            background: var(--pearl);
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle input:checked+.toggle-track {
+            background: var(--accent-primary);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .toggle input:checked+.toggle-track::before {
+            transform: translateX(18px);
+            background: #fff;
+        }
+
+        /* ── Detail Panel ── */
+        .detail-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 500;
+            width: 320px;
+            padding: 24px;
+            border-radius: 20px;
+            transform: translateX(30px);
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.45s cubic-bezier(.4, 0, .2, 1), opacity 0.4s ease;
+        }
+
+        /* Leaflet Zoom Control Positioning */
+        .leaflet-top.leaflet-right {
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+
+        /* Adjust zoom control if detail panel is too close */
+        .detail-panel.visible~#map .leaflet-top.leaflet-right {
+            margin-top: 140px;
+            /* Shift down if overlapping */
+        }
+
+        /* Better yet, let's just use absolute positioning for zoom to be precise */
+        .leaflet-control-zoom {
+            border: 1px solid var(--glass-border) !important;
+            background: rgba(8, 18, 34, 0.8) !important;
+            backdrop-filter: blur(10px);
+            border-radius: 12px !important;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        .leaflet-control-zoom a {
+            background: transparent !important;
+            color: var(--accent-primary) !important;
+            border-bottom: 1px solid var(--glass-border) !important;
+            width: 34px !important;
+            height: 34px !important;
+            line-height: 34px !important;
+            font-weight: 800 !important;
+        }
+
+        .leaflet-control-zoom a:hover {
+            background: rgba(247, 215, 148, 0.1) !important;
+            color: #fff !important;
+        }
+
+        .detail-panel.visible {
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        @media (max-width: 768px) {
+            .detail-panel {
+                position: fixed;
+                top: auto;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                border-radius: 20px 20px 0 0;
+                z-index: 800;
+                max-height: 80vh;
+                overflow-y: auto;
+                transform: translateY(100%);
+            }
+
+            .detail-panel.visible {
+                transform: translateY(0);
+            }
+        }
+
+        .btn-champ {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--champagne), #eec06b);
+            color: var(--midnight-deep);
+            font-weight: 700;
+            font-size: 0.78rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.25s ease;
+        }
+
+        .btn-champ:hover {
+            background: linear-gradient(135deg, #FFD072, var(--champagne));
+            box-shadow: 0 4px 20px var(--accent-glow);
+            transform: translateY(-1px);
+        }
+
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: transparent;
+            color: var(--pearl);
+            font-weight: 500;
+            font-size: 0.78rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.25s ease;
+        }
+
+        .btn-ghost:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: rgba(252, 251, 251, 0.35);
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+        }
+
+        .close-btn:hover {
+            color: var(--pearl);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 99px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .badge-open {
+            background: rgba(74, 222, 128, 0.12);
+            color: #4ADE80;
+        }
+
+        .badge-closed {
+            background: rgba(237, 166, 163, 0.12);
+            color: var(--rose);
+        }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .d-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .d-row-icon {
+            color: rgba(252, 251, 251, 0.25);
+            flex-shrink: 0;
+            font-size: 14px;
+            margin-top: 1px;
+        }
+
+        .d-row-text {
+            font-size: 0.8rem;
+            color: rgba(252, 251, 251, 0.65);
+            line-height: 1.4;
+        }
+
+        .filter-fab {
+            display: none;
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 600;
+            padding: 12px 22px;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--accent-primary);
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .filter-fab {
+                display: inline-flex;
+            }
+        }
+
+        .backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 650;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .backdrop.on {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* ═══════════════════════════════════
+       STATS SECTION
+       ═══════════════════════════════════ */
+        .stats-section {
+            padding: 80px 24px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .stat-card {
+            padding: 36px 28px;
+            border-radius: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(74, 158, 255, 0.3), transparent);
+        }
+
+        .stat-num {
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--champagne), var(--dusty-rose));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+            letter-spacing: -0.03em;
+            filter: drop-shadow(0 0 15px rgba(74, 158, 255, 0.3));
+        }
+
+        .stat-label {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: rgba(252, 251, 251, 0.3);
+            font-weight: 500;
+        }
+
+        /* ═══════════════════════════════════
+       DIVIDER
+       ═══════════════════════════════════ */
+        .divider {
+            width: 100%;
+            max-width: 80rem;
+            margin: 0 auto;
+            height: 1px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.06), transparent);
+        }
+
+        /* ═══════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════ */
+        .footer {
+            padding: 40px 24px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .footer-inner {
+            max-width: 80rem;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer p {
+            font-size: 0.7rem;
+            color: rgba(252, 251, 251, 0.2);
+        }
+
+        .footer-brand {
+            font-weight: 700;
+            color: rgba(252, 251, 251, 0.4);
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .footer-brand .fd {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--blue-electric);
+            opacity: 0.6;
+            box-shadow: 0 0 6px rgba(74, 158, 255, 0.4);
+        }
+
+        /* ═══════════════════════════════════
+       LEAFLET OVERRIDES
+       ═══════════════════════════════════ */
+        .leaflet-container {
+            background: var(--navy-deep) !important;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .leaflet-control-zoom {
+            border: none !important;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .leaflet-control-zoom a {
+            background: rgba(15, 29, 58, 0.85) !important;
+            backdrop-filter: blur(12px) !important;
+            color: var(--pearl) !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            width: 36px !important;
+            height: 36px !important;
+            line-height: 36px !important;
+            font-size: 16px !important;
+        }
+
+        .leaflet-control-zoom a:hover {
+            background: rgba(15, 29, 58, 1) !important;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: rgba(15, 29, 58, 0.92) !important;
+            backdrop-filter: blur(16px) !important;
+            color: var(--pearl) !important;
+            border-radius: 14px !important;
+            border: 1px solid rgba(255, 255, 255, 0.08) !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+            padding: 0 !important;
+        }
+
+        .leaflet-popup-tip {
+            background: rgba(15, 29, 58, 0.92) !important;
+        }
+
+        .leaflet-popup-close-button {
+            color: rgba(252, 251, 251, 0.4) !important;
+        }
+
+        .leaflet-popup-close-button:hover {
+            color: var(--blue-electric) !important;
+        }
+
+        /* ── Custom Map Markers ── */
+        .pin {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 29, 58, 0.92);
+            border: 2px solid rgba(255, 255, 255, 0.12);
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .pin:hover {
+            transform: scale(1.18);
+            border-color: rgba(74, 158, 255, 0.5);
+            box-shadow: 0 0 24px rgba(74, 158, 255, 0.2);
+        }
+
+        .pin.sel {
+            border-color: var(--blue-electric);
+            box-shadow: 0 0 0 5px rgba(74, 158, 255, 0.2), 0 0 30px rgba(74, 158, 255, 0.3);
+            transform: scale(1.22);
+        }
+
+        .user-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--blue-electric);
+            border: 3px solid var(--navy-deep);
+            box-shadow: 0 0 0 6px rgba(74, 158, 255, 0.25), 0 0 24px rgba(74, 158, 255, 0.35);
+            animation: pulseRing 2s ease-out infinite;
+        }
+
+        @keyframes pulseRing {
+            0% {
+                box-shadow: 0 0 0 6px rgba(74, 158, 255, 0.25), 0 0 24px rgba(74, 158, 255, 0.35);
+            }
+
+            70% {
+                box-shadow: 0 0 0 20px rgba(74, 158, 255, 0), 0 0 24px rgba(74, 158, 255, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 6px rgba(74, 158, 255, 0.25), 0 0 24px rgba(74, 158, 255, 0.35);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ═══ Background & Overlays ═══ -->
+    <div id="bg3d"></div>
+    <div id="bg-overlay"></div>
+    <div class="bg-vignette"></div>
+    <div class="bg-scanlines"></div>
+
+    <!-- ═══ Navbar ═══ -->
+    <nav class="navbar" id="navbar">
+        <a href="#" class="nav-brand"><span class="nav-dot"></span> Pulse</a>
+        <div class="nav-links">
+            <a href="#map-section">Map</a>
+            <a href="#stats-section">Stats</a>
+            <a href="/dashboard">Dashboard</a>
+        </div>
+    </nav>
+
+    <!-- ═══════════════════════════════════
+       HERO
+       ═══════════════════════════════════ -->
+    <section class="hero" id="hero">
+        <p class="hero-eyebrow" id="heroEyebrow">Pulse · Resource Mapping</p>
+        <h1 class="hero-title" id="heroTitle">
+            <span class="line">Find <span class="accent">Help</span></span>
+            <span class="line">Near You.</span>
+        </h1>
+        <p class="hero-sub" id="heroSub">
+            Shelters, hospitals, and emergency support — mapped in real time. When every second counts, Pulse helps you
+            find what matters.
+        </p>
+        <a href="#map-section" class="hero-cta" id="heroCta">
+            Explore Resources
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M7 17l9.2-9.2M17 17V7.8H7.8" />
+            </svg>
+        </a>
+        <div class="hero-scroll-hint" id="heroScroll">
+            <span>Scroll</span>
+            <div class="scroll-line"></div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+       MAP SECTION
+       ═══════════════════════════════════ -->
+    <section class="section map-section" id="map-section">
+        <div class="max-w">
+            <div class="map-header reveal">
+                <p class="section-label">Interactive Map</p>
+                <h2>Every resource,<br>on your radar.</h2>
+                <p>Category-tagged markers with real-time availability and one-tap navigation.</p>
+            </div>
+
+            <div class="map-container reveal" style="position:relative;">
+                <div id="map"></div>
+
+                <!-- Filter Panel -->
+                <div id="filterPanel" class="filter-panel glass">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <span class="f-title">Filters</span>
+                        <button id="filterClose" class="close-btn" style="display:none;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="search-wrap">
+                        <svg viewBox="0 0 24 24" stroke-width="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="M21 21l-4.35-4.35" />
+                        </svg>
+                        <input type="text" id="searchInput" class="search-input" placeholder="Search resources…" />
+                    </div>
+
+                    <div style="margin-bottom:16px;">
+                        <p class="f-label">Category</p>
+                        <div id="catBtns" style="display:flex;flex-wrap:wrap;gap:7px;"></div>
+                    </div>
+
+                    <div style="margin-bottom:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                            <p class="f-label" style="margin-bottom:0;">Radius</p>
+                            <span id="radiusVal"
+                                style="font-size:0.7rem;color:var(--accent-primary);font-weight:600;">10
+                                km</span>
+                        </div>
+                        <input type="range" id="radiusSlider" class="range-slider" min="1" max="15" value="10" />
+                    </div>
+
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <p class="f-label" style="margin-bottom:0;">Open Now</p>
+                        <label class="toggle">
+                            <input type="checkbox" id="openNow" />
+                            <span class="toggle-track"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Detail Panel -->
+                <div id="detailPanel" class="detail-panel glass">
+                    <div style="position:absolute;top:16px;right:16px;">
+                        <button id="detailClose" class="close-btn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M18 6L6 18M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="detailContent"></div>
+                </div>
+            </div>
+
+            <!-- Mobile FAB -->
+            <button id="filterFab" class="filter-fab glass">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="21" y1="4" x2="14" y2="4" />
+                    <line x1="10" y1="4" x2="3" y2="4" />
+                    <line x1="21" y1="12" x2="12" y2="12" />
+                    <line x1="8" y1="12" x2="3" y2="12" />
+                    <line x1="21" y1="20" x2="16" y2="20" />
+                    <line x1="12" y1="20" x2="3" y2="20" />
+                </svg>
+                Filters
+            </button>
+        </div>
+    </section>
+
+    <!-- Backdrop -->
+    <div id="backdrop" class="backdrop"></div>
+
+    <!-- ═══════════════════════════════════
+       STATS SECTION
+       ═══════════════════════════════════ -->
+    <section class="stats-section" id="stats-section">
+        <div class="max-w">
+            <div class="reveal" style="text-align:center;margin-bottom:40px;">
+                <p class="section-label">Live Overview</p>
+                <h2 style="font-size:clamp(1.6rem,3.5vw,2.4rem);font-weight:800;letter-spacing:-0.03em;">Resources at a
+                    glance</h2>
+            </div>
+            <div class="stats-grid reveal" id="statsGrid"></div>
+        </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- ═══ Footer ═══ -->
+    <footer class="footer">
+        <div class="footer-inner">
+            <div class="footer-brand"><span class="fd"></span> Pulse</div>
+            <p>© 2026 Pulse. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- ═══ Leaflet JS ═══ -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        /* ═══════════════════════════════════════
+           DATA
+           ═══════════════════════════════════════ */
+        var CATS = [
+            { id: 'hospital', label: 'Hospitals', icon: '🏥' },
+            { id: 'police', label: 'Police Stations', icon: '🚔' },
+            { id: 'fire', label: 'Fire Stations', icon: '🚒' },
+            { id: 'shelter', label: 'Shelters', icon: '🏠' },
+            { id: 'food', label: 'Food Distribution', icon: '🍲' },
+        ];
+        // Default fallback (Mumbai) — will be overwritten by live geolocation
+        var USER_LOC = { lat: 19.0760, lng: 72.8777 };
+        var userMarker = null;
+
+        // ── Haversine distance (km) ──
+        function haversine(lat1, lng1, lat2, lng2) {
+            var R = 6371;
+            var dLat = (lat2 - lat1) * Math.PI / 180;
+            var dLng = (lng2 - lng1) * Math.PI / 180;
+            var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        // ── Predefined camps (fire, shelter, food) — placed relative to user ──
+        var CAMP_TEMPLATES = [
+            { id: 'c1', name: 'Central Fire Brigade', cat: 'fire', dLat: 0.003, dLng: 0.012, addr: 'Station Road, Sector 2', phone: '101', open: true, avail: 'Active — 3 units ready', beds: 0 },
+            { id: 'c2', name: 'South Fire Station', cat: 'fire', dLat: -0.045, dLng: -0.038, addr: 'Industrial Area, South Ring', phone: '101', open: true, avail: 'Active — 1 unit on call', beds: 0 },
+            { id: 'c3', name: 'East Fire Station', cat: 'fire', dLat: 0.012, dLng: 0.035, addr: 'East Highway, Block F', phone: '101', open: true, avail: 'Active — 2 units', beds: 0 },
+            { id: 'c4', name: 'SafeHaven Relief Center', cat: 'shelter', dLat: -0.005, dLng: -0.004, addr: 'Old Town, Near Central Park', phone: '+91 1800 111 222', open: true, avail: '42 spots available', beds: 42 },
+            { id: 'c5', name: 'Harbor Light Shelter', cat: 'shelter', dLat: 0.009, dLng: 0.016, addr: 'Dock Road, East Side', phone: '+91 1800 111 333', open: true, avail: '18 spots available', beds: 18 },
+            { id: 'c6', name: 'New Hope Community Shelter', cat: 'shelter', dLat: -0.018, dLng: -0.025, addr: 'Community Center, Block D', phone: '+91 1800 111 444', open: false, avail: 'Reopens at 6:00 AM', beds: 0 },
+            { id: 'c7', name: 'Unity Shelter Home', cat: 'shelter', dLat: -0.035, dLng: -0.030, addr: 'Lower Town, Near Bridge', phone: '+91 1800 111 555', open: true, avail: '25 spots available', beds: 25 },
+            { id: 'c8', name: 'Pulse Emergency Camp Alpha', cat: 'shelter', dLat: 0.008, dLng: -0.010, addr: 'North Gate, Sector 1', phone: '+91 1800 111 666', open: true, avail: '60 spots available', beds: 60 },
+            { id: 'c9', name: 'Annapurna Food Bank', cat: 'food', dLat: 0.004, dLng: -0.008, addr: 'Market Square, Central', phone: '+91 1800 222 111', open: true, avail: 'Serving — 200 meals', beds: 0 },
+            { id: 'c10', name: 'Community Kitchen South', cat: 'food', dLat: -0.050, dLng: -0.032, addr: 'South Market, Lane 3', phone: '+91 1800 222 222', open: true, avail: 'Serving until 9 PM', beds: 0 },
+            { id: 'c11', name: 'Relief Meals East', cat: 'food', dLat: -0.058, dLng: 0.020, addr: 'East Industrial, Ring Rd', phone: '+91 1800 222 333', open: false, avail: 'Closed — Resumes Tomorrow', beds: 0 },
+            { id: 'c12', name: 'Pulse Mobile Kitchen', cat: 'food', dLat: 0.006, dLng: 0.005, addr: 'Main Chowk, Near Bus Stand', phone: '+91 1800 222 444', open: true, avail: 'Serving — 150 meals', beds: 0 },
+        ];
+
+        var DATA = [];
+        var realPlacesFetched = false;
+
+        // Build predefined camp data (fire, shelter, food)
+        function buildCampData() {
+            return CAMP_TEMPLATES.map(function (t) {
+                var lat = USER_LOC.lat + t.dLat;
+                var lng = USER_LOC.lng + t.dLng;
+                var dist = Math.round(haversine(USER_LOC.lat, USER_LOC.lng, lat, lng) * 10) / 10;
+                return {
+                    id: t.id, name: t.name, cat: t.cat,
+                    lat: lat, lng: lng,
+                    addr: t.addr, phone: t.phone,
+                    dist: dist, open: t.open,
+                    avail: t.avail, beds: t.beds
+                };
+            });
+        }
+
+        // Fallback hospital & police templates (if API fails)
+        var FALLBACK_REAL = [
+            { id: 'fb1', name: 'District General Hospital', cat: 'hospital', dLat: 0.008, dLng: 0.005, addr: 'Near your location', phone: '108', open: true, avail: 'Open — Hospital', beds: 12 },
+            { id: 'fb2', name: 'Community Health Center', cat: 'hospital', dLat: -0.010, dLng: -0.014, addr: 'Near your location', phone: '108', open: true, avail: 'Open — Health Center', beds: 6 },
+            { id: 'fb3', name: 'City Medical College Hospital', cat: 'hospital', dLat: 0.018, dLng: -0.020, addr: 'Near your location', phone: '108', open: true, avail: 'Open — Major Hospital', beds: 30 },
+            { id: 'fb4', name: 'Emergency Care Hospital', cat: 'hospital', dLat: -0.025, dLng: 0.010, addr: 'Near your location', phone: '108', open: true, avail: 'Open — 24/7 Emergency', beds: 8 },
+            { id: 'fb5', name: 'Central Police Station', cat: 'police', dLat: -0.006, dLng: 0.008, addr: 'Near your location', phone: '100', open: true, avail: 'Active — Full Staff', beds: 0 },
+            { id: 'fb6', name: 'City Police Headquarters', cat: 'police', dLat: -0.015, dLng: -0.020, addr: 'Near your location', phone: '100', open: true, avail: 'Active', beds: 0 },
+            { id: 'fb7', name: 'Traffic Police Station', cat: 'police', dLat: 0.012, dLng: 0.018, addr: 'Near your location', phone: '100', open: true, avail: 'Active — Patrol Unit', beds: 0 },
+        ];
+
+        function getFallbackRealData() {
+            return FALLBACK_REAL.map(function (t) {
+                var lat = USER_LOC.lat + t.dLat;
+                var lng = USER_LOC.lng + t.dLng;
+                var dist = Math.round(haversine(USER_LOC.lat, USER_LOC.lng, lat, lng) * 10) / 10;
+                return {
+                    id: t.id, name: t.name, cat: t.cat,
+                    lat: lat, lng: lng, addr: t.addr, phone: t.phone,
+                    dist: dist, open: t.open, avail: t.avail, beds: t.beds, isReal: false
+                };
+            });
+        }
+
+        // Show a toast message on the map area
+        function showMapToast(msg, duration) {
+            var existing = document.getElementById('mapToast');
+            if (existing) existing.remove();
+            var toast = document.createElement('div');
+            toast.id = 'mapToast';
+            toast.style.cssText = 'position:fixed;top:90px;left:50%;transform:translateX(-50%);z-index:9999;' +
+                'background:rgba(8,18,34,0.92);backdrop-filter:blur(16px);border:1px solid var(--accent-glow);' +
+                'color:var(--accent-primary);padding:12px 24px;border-radius:12px;font-size:0.82rem;font-weight:500;letter-spacing:0.03em;' +
+                'box-shadow:0 8px 32px rgba(0,0,0,0.4),0 0 20px var(--accent-glow);transition:opacity 0.5s ease;';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            if (duration) {
+                setTimeout(function () {
+                    toast.style.opacity = '0';
+                    setTimeout(function () { toast.remove(); }, 600);
+                }, duration);
+            }
+        }
+
+        // Fetch REAL hospitals & police from Overpass API (OpenStreetMap)
+        function fetchRealPlaces(callback) {
+            var lat = USER_LOC.lat;
+            var lng = USER_LOC.lng;
+            var radiusMeters = 10000; // 10km search radius
+
+            var query = '[out:json][timeout:25];(' +
+                'nwr["amenity"="hospital"](around:' + radiusMeters + ',' + lat + ',' + lng + ');' +
+                'nwr["amenity"="police"](around:' + radiusMeters + ',' + lat + ',' + lng + ');' +
+                ');out center;';
+
+            var url = 'https://overpass-api.de/api/interpreter?data=' + encodeURIComponent(query);
+
+            showMapToast('🔍 Fetching real hospitals & police near you...');
+
+            function parseResponse(text) {
+                try {
+                    var data = JSON.parse(text);
+                    var results = [];
+                    var seen = {};
+                    data.elements.forEach(function (el, idx) {
+                        var elLat = el.lat || (el.center && el.center.lat);
+                        var elLng = el.lon || (el.center && el.center.lon);
+                        if (!elLat || !elLng) return;
+
+                        var tags = el.tags || {};
+                        var name = tags.name || tags['name:en'] || '';
+                        if (!name) return;
+
+                        var key = name.toLowerCase().trim();
+                        if (seen[key]) return;
+                        seen[key] = true;
+
+                        var amenity = tags.amenity;
+                        var cat = amenity === 'hospital' ? 'hospital' : 'police';
+                        var dist = Math.round(haversine(USER_LOC.lat, USER_LOC.lng, elLat, elLng) * 10) / 10;
+
+                        var addr = '';
+                        if (tags['addr:street']) {
+                            addr = tags['addr:street'];
+                            if (tags['addr:housenumber']) addr = tags['addr:housenumber'] + ' ' + addr;
+                            if (tags['addr:city']) addr += ', ' + tags['addr:city'];
+                        } else {
+                            addr = tags['addr:full'] || tags['addr:city'] || 'Near your location';
+                        }
+
+                        var phone = tags.phone || tags['contact:phone'] || (cat === 'hospital' ? '108' : '100');
+
+                        results.push({
+                            id: 'real_' + idx,
+                            name: name,
+                            cat: cat,
+                            lat: elLat,
+                            lng: elLng,
+                            addr: addr,
+                            phone: phone,
+                            dist: dist,
+                            open: true,
+                            avail: cat === 'hospital' ? 'Open — Real Hospital' : 'Active — Real Station',
+                            beds: cat === 'hospital' ? Math.floor(Math.random() * 20) + 1 : 0,
+                            isReal: true
+                        });
+                    });
+
+                    results.sort(function (a, b) { return a.dist - b.dist; });
+
+                    if (results.length > 0) {
+                        showMapToast('✅ Found ' + results.length + ' real hospitals & police stations', 4000);
+                    } else {
+                        showMapToast('⚠️ No results from API — using sample data', 4000);
+                        results = getFallbackRealData();
+                    }
+                    callback(results);
+                } catch (e) {
+                    console.warn('Failed to parse Overpass response:', e);
+                    showMapToast('⚠️ API parse error — using sample data', 4000);
+                    callback(getFallbackRealData());
+                }
+            }
+
+            // Try fetch first, then XMLHttpRequest as fallback (for file:// protocol)
+            if (typeof fetch !== 'undefined') {
+                fetch(url)
+                    .then(function (res) { return res.text(); })
+                    .then(function (text) { parseResponse(text); })
+                    .catch(function (err) {
+                        console.warn('fetch failed, trying XMLHttpRequest...', err);
+                        tryXHR(url, parseResponse, function () {
+                            console.warn('Both fetch and XHR failed — using fallback data.');
+                            showMapToast('📡 Offline — showing sample hospitals & police', 4000);
+                            callback(getFallbackRealData());
+                        });
+                    });
+            } else {
+                tryXHR(url, parseResponse, function () {
+                    showMapToast('📡 Offline — showing sample hospitals & police', 4000);
+                    callback(getFallbackRealData());
+                });
+            }
+        }
+
+        function tryXHR(url, onSuccess, onError) {
+            try {
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', url, true);
+                xhr.timeout = 20000;
+                xhr.onload = function () {
+                    if (xhr.status === 200) { onSuccess(xhr.responseText); }
+                    else { onError(); }
+                };
+                xhr.onerror = onError;
+                xhr.ontimeout = onError;
+                xhr.send();
+            } catch (e) { onError(); }
+        }
+
+        // Build full DATA array (real + camps)
+        var realPlacesCache = [];
+
+        function buildResourceData() {
+            var camps = buildCampData();
+            DATA = realPlacesCache.concat(camps);
+            DATA.forEach(function (r) {
+                if (r.isReal) {
+                    r.dist = Math.round(haversine(USER_LOC.lat, USER_LOC.lng, r.lat, r.lng) * 10) / 10;
+                }
+            });
+            DATA.sort(function (a, b) { return a.dist - b.dist; });
+        }
+
+        /* ═══════════════════════════════════════
+           STATE
+           ═══════════════════════════════════════ */
+        var activeCats = new Set(CATS.map(function (c) { return c.id; }));
+        var radius = 10, openNow = false, searchQ = '', selectedId = null;
+        var map, markersLayer;
+
+
+        /* ═══════════════════════════════════════
+           HERO ANIMATIONS
+           ═══════════════════════════════════════ */
+        (function animateHero() {
+            var items = [
+                { el: document.getElementById('heroEyebrow'), delay: 200 },
+                { el: document.getElementById('heroTitle'), delay: 500 },
+                { el: document.getElementById('heroSub'), delay: 900 },
+                { el: document.getElementById('heroCta'), delay: 1200 },
+                { el: document.getElementById('heroScroll'), delay: 1800 },
+            ];
+            items.forEach(function (item) {
+                setTimeout(function () {
+                    item.el.style.transition = 'opacity 0.9s ease-out, transform 0.9s ease-out';
+                    item.el.style.opacity = '1';
+                    item.el.style.transform = 'translateY(0)';
+                }, item.delay);
+            });
+        })();
+
+        /* ═══════════════════════════════════════
+           SCROLL REVEAL
+           ═══════════════════════════════════════ */
+        var revealObs = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObs.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+        document.querySelectorAll('.reveal').forEach(function (el) { revealObs.observe(el); });
+
+        /* ═══════════════════════════════════════
+           NAVBAR SCROLL
+           ═══════════════════════════════════════ */
+        window.addEventListener('scroll', function () {
+            document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
+        });
+
+        /* ═══════════════════════════════════════
+           MAP + GEOLOCATION
+           ═══════════════════════════════════════ */
+        document.addEventListener('DOMContentLoaded', function () {
+            initMap();
+            initFilters();
+            initDetailPanel();
+
+            if (window.innerWidth <= 768) document.getElementById('filterClose').style.display = 'flex';
+            window.addEventListener('resize', function () {
+                document.getElementById('filterClose').style.display = window.innerWidth <= 768 ? 'flex' : 'none';
+            });
+
+            // Request live location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function (pos) {
+                        USER_LOC.lat = pos.coords.latitude;
+                        USER_LOC.lng = pos.coords.longitude;
+                        onLocationReady();
+
+                        // Watch for location changes
+                        var lastFetchLoc = { lat: USER_LOC.lat, lng: USER_LOC.lng };
+                        navigator.geolocation.watchPosition(function (p) {
+                            USER_LOC.lat = p.coords.latitude;
+                            USER_LOC.lng = p.coords.longitude;
+                            updateUserMarker();
+                            buildResourceData();
+                            render();
+
+                            // Re-fetch real data if user moved > 2km from last fetch
+                            var moved = haversine(lastFetchLoc.lat, lastFetchLoc.lng, USER_LOC.lat, USER_LOC.lng);
+                            if (moved > 2) {
+                                lastFetchLoc = { lat: USER_LOC.lat, lng: USER_LOC.lng };
+                                fetchRealPlaces(function (results) {
+                                    realPlacesCache = results;
+                                    buildResourceData();
+                                    render();
+                                });
+                            }
+                        }, null, { enableHighAccuracy: true });
+                    },
+                    function (err) {
+                        console.warn('Geolocation denied, using default location.', err);
+                        onLocationReady();
+                    },
+                    { enableHighAccuracy: true, timeout: 8000 }
+                );
+            } else {
+                onLocationReady();
+            }
+        });
+
+        function onLocationReady() {
+            // Immediately show camps while real data loads
+            buildResourceData();
+            placeUserMarker();
+            map.setView([USER_LOC.lat, USER_LOC.lng], 12);
+            setTimeout(function () { map.flyTo([USER_LOC.lat, USER_LOC.lng], 14, { duration: 1.8 }); }, 600);
+            render();
+
+            // Fetch real hospitals & police stations in background
+            fetchRealPlaces(function (realResults) {
+                realPlacesCache = realResults;
+                buildResourceData();
+                render();
+                console.log('✅ Loaded ' + realResults.length + ' real hospitals & police stations from OpenStreetMap');
+            });
+        }
+
+        function initMap() {
+            map = L.map('map', {
+                center: [USER_LOC.lat, USER_LOC.lng],
+                zoom: 12,
+                zoomControl: false,
+                attributionControl: false,
+            });
+            L.control.zoom({ position: 'topright' }).addTo(map);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                maxZoom: 19, subdomains: 'abcd',
+            }).addTo(map);
+            markersLayer = L.layerGroup().addTo(map);
+        }
+
+        function placeUserMarker() {
+            var uIcon = L.divIcon({ className: '', html: '<div class="user-dot"></div>', iconSize: [18, 18], iconAnchor: [9, 9] });
+            userMarker = L.marker([USER_LOC.lat, USER_LOC.lng], { icon: uIcon, zIndexOffset: 1000 }).addTo(map);
+        }
+
+        function updateUserMarker() {
+            if (userMarker) {
+                userMarker.setLatLng([USER_LOC.lat, USER_LOC.lng]);
+            }
+        }
+
+        function renderMarkers(resources) {
+            markersLayer.clearLayers();
+            resources.forEach(function (r) {
+                var meta = CATS.find(function (c) { return c.id === r.cat; }) || { icon: '📍', label: 'Resource' };
+                var isSel = selectedId === r.id;
+                var html = '<div class="pin' + (isSel ? ' sel' : '') + '" data-id="' + r.id + '">' + meta.icon + '</div>';
+                var icon = L.divIcon({ className: '', html: html, iconSize: [40, 40], iconAnchor: [20, 20] });
+                var marker = L.marker([r.lat, r.lng], { icon: icon }).addTo(markersLayer);
+                marker.bindPopup(
+                    '<div style="padding:10px 14px;min-width:160px;">' +
+                    '<p style="font-size:13px;font-weight:600;margin-bottom:3px;">' + r.name + '</p>' +
+                    '<p style="font-size:11px;opacity:0.55;">' + meta.label + ' · ' + r.dist + ' km</p></div>',
+                    { closeButton: false, offset: [0, -12] }
+                );
+                marker.on('mouseover', function () { this.openPopup(); });
+                marker.on('mouseout', function () { this.closePopup(); });
+                marker.on('click', function () {
+                    selectedId = r.id;
+                    document.querySelectorAll('.pin').forEach(function (el) {
+                        el.classList.toggle('sel', parseInt(el.dataset.id) === r.id);
+                    });
+                    map.flyTo([r.lat, r.lng], 15, { duration: 1 });
+                    showDetail(r);
+                });
+            });
+        }
+
+        /* ═══════════════════════════════════════
+           FILTERS
+           ═══════════════════════════════════════ */
+        function initFilters() {
+            var container = document.getElementById('catBtns');
+            CATS.forEach(function (cat) {
+                var btn = document.createElement('button');
+                btn.className = 'cat-btn active';
+                btn.textContent = cat.label;
+                btn.addEventListener('click', function () {
+                    if (activeCats.has(cat.id)) { activeCats.delete(cat.id); btn.classList.remove('active'); }
+                    else { activeCats.add(cat.id); btn.classList.add('active'); }
+                    render();
+                });
+                container.appendChild(btn);
+            });
+
+            var slider = document.getElementById('radiusSlider');
+            var rVal = document.getElementById('radiusVal');
+            slider.addEventListener('input', function () { radius = parseInt(this.value); rVal.textContent = radius + ' km'; render(); });
+
+            document.getElementById('openNow').addEventListener('change', function () { openNow = this.checked; render(); });
+
+            var timer;
+            document.getElementById('searchInput').addEventListener('input', function () {
+                var v = this.value; clearTimeout(timer);
+                timer = setTimeout(function () { searchQ = v.toLowerCase().trim(); render(); }, 200);
+            });
+
+            var panel = document.getElementById('filterPanel');
+            var bd = document.getElementById('backdrop');
+            document.getElementById('filterFab').addEventListener('click', function () { panel.classList.add('open'); bd.classList.add('on'); });
+            var close = function () { panel.classList.remove('open'); bd.classList.remove('on'); };
+            document.getElementById('filterClose').addEventListener('click', close);
+            bd.addEventListener('click', close);
+        }
+
+        function applyFilters() {
+            return DATA.filter(function (r) {
+                if (!activeCats.has(r.cat)) return false;
+                if (r.dist > radius) return false;
+                if (openNow && !r.open) return false;
+                if (searchQ && r.name.toLowerCase().indexOf(searchQ) === -1 && r.addr.toLowerCase().indexOf(searchQ) === -1) return false;
+                return true;
+            });
+        }
+
+        /* ═══════════════════════════════════════
+           DETAIL PANEL
+           ═══════════════════════════════════════ */
+        function initDetailPanel() {
+            document.getElementById('detailClose').addEventListener('click', closeDetail);
+        }
+        function showDetail(r) {
+            var meta = CATS.find(function (c) { return c.id === r.cat; }) || { label: 'Resource', icon: '📍' };
+            var bc = r.open ? 'badge-open' : 'badge-closed';
+            var dc = r.open ? '#4ADE80' : '#EDA6A3';
+            document.getElementById('detailContent').innerHTML =
+                '<div style="margin-bottom:20px;">' +
+                '<span style="font-size:32px;display:block;margin-bottom:12px;">' + meta.icon + '</span>' +
+                '<p style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.08em;color:rgba(252,251,251,0.3);margin-bottom:6px;">' + meta.label + '</p>' +
+                '<h3 style="font-size:1.15rem;font-weight:700;line-height:1.3;margin-bottom:10px;">' + r.name + '</h3>' +
+                '<span class="badge ' + bc + '"><span class="badge-dot" style="background:' + dc + '"></span> ' + (r.open ? 'Open' : 'Closed') + '</span>' +
+                '</div>' +
+                '<div style="margin-bottom:22px;">' +
+                '<div class="d-row"><span class="d-row-icon">📍</span><span class="d-row-text">' + r.addr + '</span></div>' +
+                '<div class="d-row"><span class="d-row-icon">📏</span><span class="d-row-text">' + r.dist + ' km away</span></div>' +
+                '<div class="d-row"><span class="d-row-icon">📋</span><span class="d-row-text">' + r.avail + '</span></div>' +
+                '<div class="d-row"><span class="d-row-icon">📞</span><span class="d-row-text">' + r.phone + '</span></div>' +
+                '</div>' +
+                '<div style="display:flex;gap:10px;">' +
+                '<button class="btn-champ" onclick="window.open(\'https://www.google.com/maps/dir/?api=1&destination=' + r.lat + ',' + r.lng + '\',\'_blank\')">🧭 Navigate</button>' +
+                '<button class="btn-ghost" onclick="window.open(\'tel:' + r.phone + '\')">📞 Call</button>' +
+                '</div>';
+            document.getElementById('detailPanel').classList.add('visible');
+        }
+        function closeDetail() {
+            document.getElementById('detailPanel').classList.remove('visible');
+            selectedId = null;
+            document.querySelectorAll('.pin').forEach(function (el) { el.classList.remove('sel'); });
+        }
+
+        /* ═══════════════════════════════════════
+           STATS
+           ═══════════════════════════════════════ */
+        function updateStats(filtered) {
+            var total = filtered.length;
+            var shelters = filtered.filter(function (r) { return r.cat === 'shelter' && r.open; }).length;
+            var beds = filtered.reduce(function (s, r) { return s + (r.beds || 0); }, 0);
+            var stats = [
+                { icon: '📊', val: total, label: 'Total Resources Nearby' },
+                { icon: '🏠', val: shelters, label: 'Active Shelters' },
+                { icon: '🛏️', val: beds, label: 'Available Beds' },
+            ];
+            var grid = document.getElementById('statsGrid');
+            grid.innerHTML = '';
+            stats.forEach(function (s, i) {
+                var card = document.createElement('div');
+                card.className = 'stat-card glass';
+                card.innerHTML = '<p style="font-size:28px;margin-bottom:10px;">' + s.icon + '</p>' +
+                    '<div class="stat-num" data-target="' + s.val + '">0</div>' +
+                    '<p class="stat-label">' + s.label + '</p>';
+                grid.appendChild(card);
+            });
+            var obs = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        var numEl = entry.target.querySelector('.stat-num');
+                        if (numEl) countUp(numEl, parseInt(numEl.dataset.target));
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                        entry.target.style.transition = 'opacity 0.6s ease-out ' + ((Array.from(entry.target.parentNode.children).indexOf(entry.target)) * 0.15) + 's, transform 0.6s ease-out ' + ((Array.from(entry.target.parentNode.children).indexOf(entry.target)) * 0.15) + 's';
+                        obs.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.3 });
+            document.querySelectorAll('.stat-card').forEach(function (c) { obs.observe(c); });
+        }
+        function countUp(el, target) {
+            var dur = 1200, start = performance.now();
+            function tick(now) {
+                var p = Math.min((now - start) / dur, 1);
+                var e = 1 - Math.pow(1 - p, 3);
+                el.textContent = Math.round(target * e);
+                if (p < 1) requestAnimationFrame(tick);
+            }
+            requestAnimationFrame(tick);
+        }
+
+        /* ═══════════════════════════════════════
+           RENDER
+           ═══════════════════════════════════════ */
+        function render() {
+            var filtered = applyFilters();
+            renderMarkers(filtered);
+            updateStats(filtered);
+        }
+
+        // --- THREE.JS BACKGROUND ---
+        (function () {
+            const vertexShader = `
+                uniform float uTime;
+                varying vec2 vUv;
+                varying float vElevation;
+                void main() {
+                    vUv = uv;
+                    vec3 pos = position;
+                    float wave1 = sin(pos.x * 0.8 + uTime * 0.9) * 0.45;
+                    wave1 += sin(pos.y * 0.6 + uTime * 0.7) * 0.35;
+                    float wave2 = sin(pos.x * 1.5 + pos.y * 1.2 + uTime * 1.2) * 0.25;
+                    float wave3 = sin(pos.x * 3.0 + uTime * 1.8) * 0.1;
+                    wave3 += cos(pos.y * 2.5 + uTime * 1.2) * 0.1;
+                    float wave4 = sin((pos.x + pos.y) * 0.5 + uTime * 0.5) * 0.25;
+                    float elevation = wave1 + wave2 + wave3 + wave4;
+                    pos.z += elevation;
+                    vElevation = elevation;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                }
+            `;
+            const fragmentShader = `
+                uniform vec3 uColor1;
+                uniform vec3 uColor2;
+                uniform vec3 uColor3;
+                uniform float uOpacity;
+                uniform float uTime;
+                varying vec2 vUv;
+                varying float vElevation;
+                void main() {
+                    float mixFactor = smoothstep(-0.3, 0.4, vElevation);
+                    vec3 color = mix(uColor1, uColor2, mixFactor);
+                    float peakFactor = smoothstep(0.2, 0.5, vElevation);
+                    color = mix(color, uColor3, peakFactor * 0.2);
+                    float shimmer = sin(vUv.x * 30.0 + uTime * 1.2) * sin(vUv.y * 25.0 + uTime * 1.0);
+                    shimmer = smoothstep(0.6, 1.0, shimmer) * 0.12;
+                    color += vec3(shimmer) * uColor3;
+                    float edgeFade = smoothstep(0.0, 0.15, vUv.x) * smoothstep(1.0, 0.85, vUv.x)
+                                   * smoothstep(0.0, 0.15, vUv.y) * smoothstep(1.0, 0.85, vUv.y);
+                    gl_FragColor = vec4(color, uOpacity * edgeFade);
+                }
+            `;
+
+            function initBackground() {
+                const container = document.getElementById('bg3d');
+                if (!container || typeof THREE === 'undefined') return;
+
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 50);
+                camera.position.set(0, 3, 7);
+
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+                container.appendChild(renderer.domElement);
+
+                const waterGeo = new THREE.PlaneGeometry(25, 25, 128, 128);
+                const waterMat = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uTime: { value: 0 },
+                        uColor1: { value: new THREE.Color(0x0a1628) },
+                        uColor2: { value: new THREE.Color(0x1a3a6a) },
+                        uColor3: { value: new THREE.Color(0xF7D794) },
+                        uOpacity: { value: 0.55 },
+                    },
+                    vertexShader: vertexShader,
+                    fragmentShader: fragmentShader,
+                    transparent: true,
+                    depthWrite: false,
+                });
+
+                const waterMesh = new THREE.Mesh(waterGeo, waterMat);
+                waterMesh.rotation.set(-Math.PI / 2.5, 0, Math.PI / 8);
+                waterMesh.position.set(0, -1, 0);
+                scene.add(waterMesh);
+
+                const clock = new THREE.Clock();
+                function animate() {
+                    requestAnimationFrame(animate);
+                    waterMat.uniforms.uTime.value = clock.getElapsedTime();
+                    renderer.render(scene, camera);
+                }
+                animate();
+
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+            }
+
+            // Start after DOM load
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initBackground);
+            } else {
+                initBackground();
+            }
+        })();
+    </script>
+</body>
+
+</html>

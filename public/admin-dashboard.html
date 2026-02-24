@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PULSE | Admin Command Center</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #030305;
+            --midnight: #192A56;
+            --midnight-deep: #0e1b3d;
+            --midnight-light: #1e3266;
+            --champagne: #F7D794;
+            --dusty-rose: #EDA6A3;
+            --pearl: #FCFBFB;
+
+            --panel-bg: rgba(25, 42, 86, 0.4);
+            --accent-primary: var(--dusty-rose);
+            --accent-cyan: var(--champagne);
+            --accent-green: #b8e994;
+            --accent-warn: #f7d794;
+            --text-main: var(--pearl);
+            --text-dim: rgba(252, 251, 251, 0.4);
+            --glass-border: rgba(252, 251, 251, 0.08);
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        body {
+            background-color: var(--midnight-deep);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+            opacity: 0;
+            animation: pageReveal 1.2s var(--ease-out-expo) forwards;
+        }
+
+        #bg3d {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            pointer-events: none;
+        }
+
+        #bg-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse at 50% 80%, transparent 0%, rgba(14, 27, 61, 0.4) 50%, rgba(14, 27, 61, 0.85) 100%),
+                linear-gradient(to bottom, rgba(14, 27, 61, 0.3) 0%, transparent 30%, transparent 60%, rgba(14, 27, 61, 0.7) 100%);
+        }
+
+        @keyframes pageReveal {
+            from {
+                opacity: 0;
+                filter: blur(10px);
+            }
+
+            to {
+                opacity: 1;
+                filter: blur(0);
+            }
+        }
+
+        /* --- Header Navigation --- */
+        nav {
+            padding: 0.75rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(2, 2, 5, 0.9);
+            border-bottom: 1px solid var(--glass-border);
+            backdrop-filter: blur(20px);
+            z-index: 1000;
+        }
+
+        .brand-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.4rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            background: linear-gradient(135deg, var(--champagne), var(--dusty-rose));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo span {
+            font-weight: 300;
+            opacity: 0.8;
+            color: var(--pearl);
+            -webkit-text-fill-color: var(--pearl);
+        }
+
+        .admin-badge {
+            background: rgba(237, 166, 163, 0.1);
+            color: var(--dusty-rose);
+            border: 1px solid rgba(237, 166, 163, 0.3);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            box-shadow: 0 0 15px rgba(237, 166, 163, 0.1);
+            text-transform: uppercase;
+        }
+
+        /* --- Layout Grid --- */
+        .command-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr 320px;
+            gap: 1rem;
+            padding: 1rem;
+            height: calc(100vh - 60px);
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .panel-header h3 {
+            font-size: 0.85rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-header h3::before {
+            content: "⬡";
+            color: var(--accent-cyan);
+        }
+
+        /* --- Scrollable Content --- */
+        .content-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding-right: 6px;
+        }
+
+        .content-area::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .content-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content-area::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        /* --- Stat Cards --- */
+        .monitor-card {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 1.25rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            transition: all 0.2s ease;
+        }
+
+        .monitor-card:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(0, 242, 255, 0.2);
+        }
+
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: 900;
+            margin: 4px 0;
+            line-height: 1;
+        }
+
+        #activeCount {
+            color: var(--accent-primary);
+            text-shadow: 0 0 20px rgba(255, 62, 109, 0.4);
+        }
+
+        #responderCount {
+            color: var(--accent-cyan);
+            text-shadow: 0 0 20px rgba(0, 242, 255, 0.4);
+        }
+
+        /* --- Incident Items --- */
+        .incident-item {
+            background: rgba(25, 42, 86, 0.2);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            animation: pulse-entry 0.6s var(--ease-out-expo);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .incident-item:hover {
+            border-color: rgba(247, 215, 148, 0.25);
+            background: rgba(25, 42, 86, 0.3);
+        }
+
+        .incident-item.active {
+            border-color: rgba(237, 166, 163, 0.3);
+            background: linear-gradient(135deg, rgba(237, 166, 163, 0.05), transparent);
+        }
+
+        .incident-item.responding {
+            border-color: rgba(247, 215, 148, 0.3);
+            background: linear-gradient(135deg, rgba(247, 215, 148, 0.05), transparent);
+        }
+
+        .incident-item.resolved {
+            border-color: var(--glass-border);
+            opacity: 0.5;
+            filter: grayscale(0.5);
+        }
+
+        .incident-item h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--accent-primary);
+        }
+
+        /* --- Buttons --- */
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-broadcast {
+            background: linear-gradient(135deg, var(--accent-primary), #ff1f54);
+            color: white;
+            width: 100%;
+            padding: 1rem;
+            margin-top: 1rem;
+            box-shadow: 0 4px 15px rgba(255, 62, 109, 0.2);
+        }
+
+        .btn-broadcast:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 62, 109, 0.4);
+        }
+
+        .btn-action {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
+            margin-top: 0.75rem;
+        }
+
+        .btn-action:hover {
+            background: rgba(0, 242, 255, 0.1);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        /* --- Input --- */
+        textarea {
+            width: 100%;
+            height: 100px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            color: white;
+            padding: 12px;
+            font-size: 0.85rem;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            border-color: var(--accent-primary);
+        }
+
+        .tag {
+            font-size: 0.6rem;
+            font-weight: 900;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-dim);
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 1200px) {
+            .command-grid {
+                grid-template-columns: 1fr;
+                height: auto;
+                overflow-y: visible;
+            }
+
+            body {
+                overflow-y: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="bg3d"></div>
+    <div id="bg-overlay"></div>
+
+    <nav>
+        <div class="brand-section">
+            <h2 class="logo">PULSE <span>COMMAND</span></h2>
+            <div class="admin-badge">GLOBAL ADMIN</div>
+        </div>
+        <div style="display:flex; align-items:center; gap: 2.5rem;">
+            <div style="text-align: right;">
+                <div
+                    style="color: var(--accent-green); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                    <span
+                        style="width: 6px; height: 6px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 10px var(--accent-green); animation: blink 2s infinite;"></span>
+                    SYSTEM ONLINE
+                </div>
+                <div id="adminLocation"
+                    style="color: var(--text-dim); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px;">
+                    Node: Detecting Security Hub...
+                </div>
+            </div>
+            <button class="btn" onclick="location.href='/'"
+                style="background: rgba(255,255,255,0.05); color: var(--pearl); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.6rem 1.2rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; transition: all 0.3s var(--ease-out-expo);">
+                TERMINAL EXIT
+            </button>
+        </div>
+    </nav>
+
+    <div class="command-grid">
+        <!-- Operations Monitor -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3>System Ops</h3>
+            </div>
+            <div class="content-area">
+                <div id="weatherMonitor"
+                    style="background: rgba(0, 242, 255, 0.03); border: 1px solid rgba(0, 242, 255, 0.1); border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span id="weatherIcon" style="font-size: 2rem;">🌤️</span>
+                        <div>
+                            <div
+                                style="font-size: 0.6rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px;">
+                                Sector Conditions</div>
+                            <div id="weatherDesc"
+                                style="font-size: 0.8rem; font-weight: 600; color: var(--text-main); text-transform: capitalize;">
+                                Detecting...</div>
+                        </div>
+                    </div>
+                    <div id="weatherTemp" style="font-size: 1.5rem; font-weight: 900; color: var(--accent-cyan);">--°C
+                    </div>
+                </div>
+                <div class="monitor-card">
+                    <p style="color:var(--text-dim); font-size:0.7rem; font-weight:700; text-transform:uppercase;">
+                        Active Distress Signals</p>
+                    <h1 class="stat-value" id="activeCount">0</h1>
+                </div>
+                <div class="monitor-card">
+                    <p style="color:var(--text-dim); font-size:0.7rem; font-weight:700; text-transform:uppercase;">
+                        Deployments En Route</p>
+                    <h1 class="stat-value" id="responderCount">0</h1>
+                </div>
+
+                <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                    <h3
+                        style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 1rem; text-transform: uppercase;">
+                        Emergency Broadcast</h3>
+
+                    <div style="display: flex; gap: 8px; margin-bottom: 1rem;">
+                        <select id="broadcastScope"
+                            style="background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border); padding: 5px; border-radius: 4px; font-size: 0.7rem; flex: 1;">
+                            <option value="global">GLOBAL SCOPE</option>
+                            <option value="proximity">PROXIMITY (5KM)</option>
+                        </select>
+                        <select id="broadcastSeverity"
+                            style="background: rgba(0,0,0,0.3); color: white; border: 1px solid var(--glass-border); padding: 5px; border-radius: 4px; font-size: 0.7rem; flex: 1;">
+                            <option value="critical">CRITICAL</option>
+                            <option value="warning">WARNING</option>
+                        </select>
+                    </div>
+
+                    <textarea id="globalMsg" placeholder="Enter secure transmission message..."></textarea>
+                    <button class="btn btn-broadcast" onclick="broadcastAlert()">🚀 Deploy Signal</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Feed Center -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Regional Incident Feed</h3>
+                <span style="font-size: 0.7rem; color: var(--accent-primary); animation: blink 1s infinite;">● LIVE
+                    STREAM</span>
+            </div>
+            <div id="adminSosFeed" class="content-area">
+                <div style="text-align: center; padding: 4rem 0;">
+                    <p style="color: var(--text-dim); font-size: 0.9rem;">Decoding encrypted distress channels...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Support Infrastructure -->
+        <div class="panel">
+            <div class="panel-header">
+                <h3>Service Nodes</h3>
+            </div>
+            <div class="content-area" id="serviceNodesArea">
+                <div style="text-align: center; padding: 2rem 0;">
+                    <p style="color: var(--text-dim); font-size: 0.8rem;">Scanning regional nodes...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Emergency Popup -->
+    <div id="emergencyPopup" class="dashboard-card"
+        style="display: none; position: fixed; top: 2rem; right: 2rem; width: 400px; z-index: 9999; background: rgba(10, 10, 20, 0.98); border: 2px solid var(--accent-primary); box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 62, 109, 0.3); overflow: hidden; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <div
+            style="display:flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 1.25rem 1.25rem 0.5rem;">
+            <h3 id="emergencyTitle" style="color: var(--accent-primary); font-size: 0.9rem; letter-spacing: 1px;">🔥
+                CRITICAL ALERT</h3>
+            <div style="display: flex; gap: 12px; align-items: center;">
+                <button onclick="toggleMinimizePopup()" id="minimizeBtn"
+                    style="background:none; border:none; cursor:pointer; color:var(--text-dim); padding: 4px;">
+                    <span id="minimizeIcon">➖</span>
+                </button>
+                <button onclick="closeEmergencyPopup()"
+                    style="background:none; border:none; cursor:pointer; color:var(--text-dim); padding: 4px; font-size: 1.2rem; line-height: 1;">&times;</button>
+            </div>
+        </div>
+        <div id="popupContent" style="padding: 0 1.25rem 1.25rem;">
+            <p id="emergencyMsg"
+                style="color: var(--text-main); font-size: 0.95rem; line-height: 1.5; margin: 0.5rem 0 1rem;"></p>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span
+                    style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent-primary); box-shadow: 0 0 10px var(--accent-primary); animation: blink 1s infinite;"></span>
+                <span
+                    style="font-size: 0.65rem; font-weight: 800; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;">Live
+                    Broadcast in Progress</span>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        #emergencyPopup.active {
+            display: block !important;
+        }
+
+        #emergencyPopup.minimized #popupContent {
+            display: none;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0.4;
+            }
+        }
+    </style>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        let socket;
+        let adminData = JSON.parse(localStorage.getItem('pulse_user'));
+
+        function init() {
+            if (socket) return;
+            socket = io();
+
+            socket.on('SOS_ALERT', fetchAllAlerts);
+            socket.on('SOS_STATUS_UPDATE', fetchAllAlerts);
+
+            fetchAllAlerts();
+            fetchNearbyFacilities();
+
+            // Initial weather fetch for Admin (defaults to center/common area or gets local)
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const { latitude, longitude } = pos.coords;
+                    fetchWeather(latitude, longitude);
+                    fetchLocationName(latitude, longitude);
+
+                    // Register Admin in proximity map
+                    socket.emit('UPDATE_LOCATION', {
+                        userId: adminData.id,
+                        latitude: latitude,
+                        longitude: longitude
+                    });
+                });
+
+                navigator.geolocation.watchPosition(pos => {
+                    socket.emit('UPDATE_LOCATION', {
+                        userId: adminData.id,
+                        latitude: pos.coords.latitude,
+                        longitude: pos.coords.longitude
+                    });
+                });
+            }
+
+            // Global Emergency Listener
+            socket.on('GLOBAL_EMERGENCY', (data) => {
+                showEmergencyPopup(data.message, data.severity);
+            });
+        }
+
+        let popupTimer;
+
+        function showEmergencyPopup(message, severity = 'critical') {
+            const popup = document.getElementById('emergencyPopup');
+            const msgEl = document.getElementById('emergencyMsg');
+            const titleEl = document.getElementById('emergencyTitle');
+
+            msgEl.innerText = message;
+            titleEl.innerText = severity === 'critical' ? '🔥 CRITICAL ALERT' : '⚠️ SYSTEM ALERT';
+
+            popup.style.borderColor = severity === 'critical' ? 'var(--accent-primary)' : 'var(--accent-warn)';
+            popup.classList.add('active');
+            popup.classList.remove('minimized');
+            document.getElementById('minimizeIcon').innerText = '➖';
+
+            if (popupTimer) clearTimeout(popupTimer);
+            popupTimer = setTimeout(() => {
+                if (!popup.classList.contains('minimized')) {
+                    closeEmergencyPopup();
+                }
+            }, 15000);
+        }
+
+        function closeEmergencyPopup() {
+            const popup = document.getElementById('emergencyPopup');
+            popup.classList.remove('active');
+            popup.classList.remove('minimized');
+            if (popupTimer) clearTimeout(popupTimer);
+        }
+
+        function toggleMinimizePopup() {
+            const popup = document.getElementById('emergencyPopup');
+            const icon = document.getElementById('minimizeIcon');
+            const isMinimized = popup.classList.toggle('minimized');
+            icon.innerText = isMinimized ? '➕' : '➖';
+            if (isMinimized && popupTimer) clearTimeout(popupTimer);
+        }
+
+        async function fetchNearbyFacilities() {
+            if (!navigator.geolocation) return;
+
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude: lat, longitude: lng } = pos.coords;
+                try {
+                    const res = await fetch(`/api/proximity/nearby?lat=${lat}&lon=${lng}`);
+                    const data = await res.json();
+                    renderServiceNodes(data);
+                } catch (e) {
+                    console.error("Service Node Fetch Error:", e);
+                }
+            });
+        }
+
+        function renderServiceNodes(nodes) {
+            const area = document.getElementById('serviceNodesArea');
+            if (!area) return;
+
+            const categories = [
+                { id: 'hospital', label: 'Hospital', color: 'cyan' },
+                { id: 'fire_station', label: 'Fire Dept', color: 'primary' },
+                { id: 'police', label: 'Police', color: 'warn' }
+            ];
+
+            area.innerHTML = categories.map(cat => {
+                const node = nodes[cat.id];
+                const ready = node ? 'READY' : 'SCANNING';
+                const name = node ? node.name : 'Searching nearest node...';
+                const dist = node ? `${node.distance.toFixed(1)}km` : 'Out of range';
+
+                return `
+                    <div class="monitor-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <span class="tag" style="background:rgba(247, 215, 148, 0.1); color:var(--champagne)">${cat.label}</span>
+                            <span style="color:${node ? 'var(--accent-green)' : 'var(--text-dim)'}; font-size:0.6rem;">● ${ready}</span>
+                        </div>
+                        <p style="margin-top:8px; font-weight:700; font-size:0.9rem;">${name}</p>
+                        <small style="color:var(--text-dim)">Proximity: ${dist} | Status: Operational</small>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function fetchLocationName(lat, lon) {
+            try {
+                const res = await fetch(`/api/weather/geocode?lat=${lat}&lon=${lon}`);
+                const data = await res.json();
+
+                if (res.ok && data.name) {
+                    const locLabel = document.getElementById('adminLocation');
+                    const city = data.name;
+                    const state = data.state || '';
+                    locLabel.innerText = `COMMAND CENTER: ${city}${state ? ', ' + state : ''}`;
+                }
+            } catch (err) {
+                console.error("Error loading location name:", err);
+            }
+        }
+
+        async function fetchWeather(lat, lon) {
+            try {
+                const res = await fetch(`/api/weather?lat=${lat}&lon=${lon}`);
+                const data = await res.json();
+
+                if (res.ok) {
+                    document.getElementById('weatherTemp').innerText = `${Math.round(data.main.temp)}°C`;
+                    document.getElementById('weatherDesc').innerText = data.weather[0].description;
+
+                    const icon = document.getElementById('weatherIcon');
+                    const main = data.weather[0].main.toLowerCase();
+                    if (main.includes('cloud')) icon.innerText = '☁️';
+                    else if (main.includes('rain')) icon.innerText = '🌧️';
+                    else if (main.includes('clear')) icon.innerText = '☀️';
+                    else if (main.includes('snow')) icon.innerText = '❄️';
+                    else if (main.includes('storm')) icon.innerText = '⛈️';
+                    else icon.innerText = '🌤️';
+                }
+            } catch (err) {
+                console.error("Error loading weather:", err);
+            }
+        }
+
+        if (!localStorage.getItem('crisis_token')) {
+            window.location.href = '/auth';
+        }
+
+        if (!adminData || adminData.role !== 'admin') {
+            window.location.href = '/dashboard';
+        }
+
+        async function fetchAllAlerts() {
+            try {
+                const res = await fetch('/api/sos/admin-all');
+                const alerts = await res.json();
+                renderAlerts(alerts);
+            } catch (e) { console.error(e); }
+        }
+
+        function renderAlerts(alerts) {
+            const feed = document.getElementById('adminSosFeed');
+            const activeEl = document.getElementById('activeCount');
+            const respEl = document.getElementById('responderCount');
+
+            let active = 0, responders = 0;
+
+            if (alerts.length === 0) {
+                feed.innerHTML = `
+                    <div style="text-align: center; padding: 4rem 2rem; border: 1px dashed var(--glass-border); border-radius: 12px; margin-top: 1rem;">
+                        <p style="color: var(--text-dim); font-size: 0.85rem;">No active distress signals detected in current sector.</p>
+                    </div>
+                `;
+                activeEl.innerText = 0;
+                respEl.innerText = 0;
+                return;
+            }
+
+            feed.innerHTML = alerts.map(alert => {
+                const isResponding = alert.status === 'responding';
+                const isResolved = alert.status === 'resolved';
+
+                const isBroadcast = alert.emergencyType.startsWith('BROADCAST');
+                const displayName = isBroadcast ? 'SYSTEM BROADCAST' : (alert.userId?.name || 'CITIZEN');
+
+                if (alert.status === 'active') active++;
+                if (isResponding) responders++;
+
+                return `
+                    <div class="incident-item ${alert.status} ${isBroadcast ? 'broadcast-item' : ''}">
+                        <div style="display:flex; justify-content:space-between; align-items: center; margin-bottom: 0.75rem;">
+                            <span class="tag" style="background:rgba(255,255,255,0.05); color:var(--pearl); font-size: 0.65rem;">${isBroadcast ? 'BROADCAST' : alert.emergencyType.toUpperCase()}</span>
+                            <span style="color:var(--text-dim); font-size: 0.65rem; font-weight: 500;">${new Date(alert.createdAt).toLocaleTimeString()}</span>
+                        </div>
+                        <h4 style="color: ${isBroadcast ? 'var(--accent-cyan)' : isResponding ? 'var(--accent-warn)' : isResolved ? 'var(--accent-green)' : 'var(--accent-primary)'}">${displayName}</h4>
+                        <div style="display:flex; flex-direction: column; gap: 8px; margin-top: 1rem;">
+                            ${isBroadcast ? `<p style="color: var(--text-main); font-size: 0.85rem; margin-bottom: 4px; border-left: 2px solid var(--accent-cyan); padding-left: 8px;">${alert.emergencyType.split(': ')[1] || 'Global Emergency Protocol'}</p>` : ''}
+                            <span style="font-size:0.65rem; text-transform: uppercase; font-weight: 800; color:var(--text-dim)">Status: <span style="color: var(--text-main)">${alert.status.toUpperCase()}</span></span>
+                            <div style="display:flex; gap: 10px; margin-top: 5px;">
+                                ${!isBroadcast ? `<button class="btn btn-action" onclick="navigateToIncident(${alert.location.latitude}, ${alert.location.longitude})" style="margin-top:0; flex:1; font-size: 0.6rem; padding: 0.5rem; background: var(--champagne); color: var(--midnight-deep); font-weight: 700;">PROVIDE AID</button>` : ''}
+                                <button class="btn btn-action" onclick="monitorSOS('${alert._id}', ${alert.location.latitude}, ${alert.location.longitude})" style="margin-top:0; flex:1; font-size: 0.6rem; padding: 0.5rem; border-color: rgba(255,255,255,0.1);">MONITOR</button>
+                                ${!isResolved ? `<button class="btn btn-action" onclick="dismissSOS('${alert._id}')" style="margin-top:0; flex:1; font-size: 0.6rem; padding: 0.5rem; background: rgba(237,166,163,0.1); color: var(--dusty-rose); border-color: rgba(237,166,163,0.2);">DISMISS</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            activeEl.innerText = active;
+            respEl.innerText = responders;
+        }
+
+        async function broadcastAlert() {
+            const msg = document.getElementById('globalMsg').value;
+            const scope = document.getElementById('broadcastScope').value;
+            const severity = document.getElementById('broadcastSeverity').value;
+            if (!msg) return;
+
+            const payload = {
+                message: msg,
+                severity: severity
+            };
+
+            if (scope === 'proximity') {
+                if (!navigator.geolocation) return alert('GPS required for proximity broadcast');
+
+                await new Promise((resolve) => {
+                    navigator.geolocation.getCurrentPosition((pos) => {
+                        payload.latitude = pos.coords.latitude;
+                        payload.longitude = pos.coords.longitude;
+                        payload.radius = 5;
+                        resolve();
+                    }, () => {
+                        alert('Error capturing admin location. Defaulting to Global.');
+                        resolve();
+                    });
+                });
+            }
+
+            const res = await fetch('/api/sos/global-alert', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                alert(scope === 'proximity' ? 'Tactical proximity alert deployed!' : 'Broadcast deployed across all channels!');
+                document.getElementById('globalMsg').value = '';
+            }
+        }
+
+        function monitorSOS(id, lat, lng) {
+            console.log('Monitoring Incident:', id, lat, lng);
+            const coordStr = lat && lng ? `\nCoordinates: ${lat.toFixed(6)}, ${lng.toFixed(6)}` : '';
+            alert(`🛰️ ESTABLISHING SECURE MONITORING LINK\nIncident ID: ${id.slice(-6).toUpperCase()}${coordStr}`);
+        }
+
+        function navigateToIncident(destLat, destLon) {
+            // Get current location for direction origin
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const origin = `${pos.coords.latitude},${pos.coords.longitude}`;
+                const destination = `${destLat},${destLon}`;
+                const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
+                window.open(mapsUrl, '_blank');
+            }, () => {
+                // Fallback if origin coords fail
+                const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLon}&travelmode=driving`;
+                window.open(mapsUrl, '_blank');
+            });
+        }
+
+        async function dismissSOS(sosId) {
+            const btn = event.currentTarget;
+            if (!confirm('Are you sure you want to dismiss this emergency alert? This action is recorded.')) return;
+
+            if (btn) {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.innerText = 'Dismissing...';
+            }
+
+            try {
+                const res = await fetch('/api/sos/dismiss', {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sosId })
+                });
+
+                if (res.ok) {
+                    fetchAllAlerts();
+                } else {
+                    const err = await res.json();
+                    alert("Dismissal failed: " + err.message);
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                        btn.innerText = 'Dismiss';
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                    btn.innerText = 'Dismiss';
+                }
+            }
+        }
+
+        window.onload = init;
+        setInterval(fetchAllAlerts, 10000);
+    </script>
+    <script>
+        // --- THREE.JS BACKGROUND ---
+        (function () {
+            const vertexShader = `
+                uniform float uTime;
+                varying vec2 vUv;
+                varying float vElevation;
+                void main() {
+                vUv = uv;
+                vec3 pos = position;
+                float wave1 = sin(pos.x * 0.8 + uTime * 0.9) * 0.45;
+                wave1 += sin(pos.y * 0.6 + uTime * 0.7) * 0.35;
+                float wave2 = sin(pos.x * 1.5 + pos.y * 1.2 + uTime * 1.2) * 0.25;
+                float wave3 = sin(pos.x * 3.0 + uTime * 1.8) * 0.1;
+                wave3 += cos(pos.y * 2.5 + uTime * 1.2) * 0.1;
+                float wave4 = sin((pos.x + pos.y) * 0.5 + uTime * 0.5) * 0.25;
+                float elevation = wave1 + wave2 + wave3 + wave4;
+                pos.z += elevation;
+                vElevation = elevation;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+                }
+            `;
+            const fragmentShader = `
+                uniform vec3 uColor1;
+                uniform vec3 uColor2;
+                uniform vec3 uColor3;
+                uniform float uOpacity;
+                uniform float uTime;
+                varying vec2 vUv;
+                varying float vElevation;
+                void main() {
+                float mixFactor = smoothstep(-0.3, 0.4, vElevation);
+                vec3 color = mix(uColor1, uColor2, mixFactor);
+                float peakFactor = smoothstep(0.2, 0.5, vElevation);
+                color = mix(color, uColor3, peakFactor * 0.2);
+                float shimmer = sin(vUv.x * 30.0 + uTime * 1.2) * sin(vUv.y * 25.0 + uTime * 1.0);
+                shimmer = smoothstep(0.6, 1.0, shimmer) * 0.12;
+                color += vec3(shimmer) * uColor3;
+                float edgeFade = smoothstep(0.0, 0.15, vUv.x) * smoothstep(1.0, 0.85, vUv.x)
+                               * smoothstep(0.0, 0.15, vUv.y) * smoothstep(1.0, 0.85, vUv.y);
+                gl_FragColor = vec4(color, uOpacity * edgeFade);
+                }
+            `;
+
+            function initBackground() {
+                const container = document.getElementById('bg3d');
+                if (!container || typeof THREE === 'undefined') return;
+
+                const scene = new THREE.Scene();
+                const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 50);
+                camera.position.set(0, 3, 7);
+
+                const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+                container.appendChild(renderer.domElement);
+
+                const waterGeo = new THREE.PlaneGeometry(25, 25, 128, 128);
+                const waterMat = new THREE.ShaderMaterial({
+                    uniforms: {
+                        uTime: { value: 0 },
+                        uColor1: { value: new THREE.Color(0x02040a) },
+                        uColor2: { value: new THREE.Color(0x0a1c3a) },
+                        uColor3: { value: new THREE.Color(0xF7D794) },
+                        uOpacity: { value: 0.85 },
+                    },
+                    vertexShader: vertexShader,
+                    fragmentShader: fragmentShader,
+                    transparent: true,
+                    depthWrite: false,
+                });
+
+                const waterMesh = new THREE.Mesh(waterGeo, waterMat);
+                waterMesh.rotation.set(-Math.PI / 2.5, 0, Math.PI / 8);
+                waterMesh.position.set(0, -1, 0);
+                scene.add(waterMesh);
+
+                const clock = new THREE.Clock();
+                function animate() {
+                    requestAnimationFrame(animate);
+                    waterMat.uniforms.uTime.value = clock.getElapsedTime();
+                    renderer.render(scene, camera);
+                }
+                animate();
+
+                window.addEventListener('resize', () => {
+                    camera.aspect = window.innerWidth / window.innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+            }
+            window.addEventListener('load', initBackground);
+        })();
+    </script>
+</body>
+
+</html>

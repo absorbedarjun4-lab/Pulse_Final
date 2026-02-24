@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulse | Safe Walk</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Inter:wght@300;400;600;800;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: '#0a0e1a',
+            champagne: '#F7D794',
+            rose: '#EDA6A3',
+            pearl: '#FCFBFB',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+
+<body class="bg-navy text-pearl antialiased">
+
+  <!-- Animated Background -->
+  <div id="bg3d" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-2; background:#050a14;"></div>
+  <div id="bg-overlay"
+    style="position:fixed; top:0; left:0; width:100%; height:100%; background:radial-gradient(circle at 50% 50%, transparent 0%, rgba(5,10,24,0.4) 100%); z-index:-1; pointer-events:none;">
+  </div>
+  <div class="ambient-glow"
+    style="position:fixed; top:0; left:0; width:100%; height:100%; background:radial-gradient(circle at 20% 30%, rgba(247, 215, 148, 0.03) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(237, 166, 163, 0.03) 0%, transparent 50%); z-index:-1; pointer-events:none;">
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       NAVIGATION BAR (Deta Surf Style)
+       ═══════════════════════════════════════════════════════ -->
+  <nav class="fixed top-0 left-0 w-full z-50 border-b border-white/[0.06] backdrop-blur-xl bg-navy/60">
+    <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <!-- Logo -->
+      <a href="/" class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-champagne/10 border border-champagne/30 flex items-center justify-center">
+          <span class="text-champagne font-black text-sm">P</span>
+        </div>
+        <span class="text-lg font-black tracking-tight">PULSE</span>
+      </a>
+
+      <!-- Nav Links -->
+      <div class="hidden md:flex items-center gap-8">
+        <a href="/user-dashboard.html"
+          class="text-xs mono uppercase tracking-[0.2em] text-pearl/40 hover:text-pearl transition-colors">Dashboard</a>
+        <a href="#"
+          class="text-xs mono uppercase tracking-[0.2em] text-champagne hover:text-pearl transition-colors">Safe
+          Walk</a>
+        <a href="/user-dashboard.html"
+          class="text-xs mono uppercase tracking-[0.2em] text-pearl/40 hover:text-pearl transition-colors">Reports</a>
+      </div>
+
+      <!-- Status Pill -->
+      <div id="nav-status"
+        class="flex items-center gap-2 px-4 py-1.5 rounded-full border border-white/[0.06] bg-white/[0.02]">
+        <span id="status-indicator" class="status-dot"></span>
+        <span class="text-[11px] mono uppercase tracking-wider text-pearl/50">
+          <span id="status-text" class="text-pearl/80 font-medium">Inactive</span>
+        </span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Live Status Bar (Active Walk Only) -->
+  <div id="status-bar"
+    class="fixed top-16 left-0 w-full bg-champagne/5 border-b border-champagne/10 py-2 px-6 z-40 flex justify-between items-center transform -translate-y-full opacity-0">
+    <div class="flex items-center gap-3">
+      <div class="w-2 h-2 rounded-full bg-champagne animate-pulse"></div>
+      <span class="text-xs mono uppercase tracking-wider text-champagne/80">Walk Active</span>
+    </div>
+    <div class="text-sm mono tracking-tighter text-champagne">
+      <span id="walk-timer">00:00:00</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       HERO SECTION
+       ═══════════════════════════════════════════════════════ -->
+  <main class="max-w-7xl mx-auto px-6 pt-28 pb-16">
+    <header class="pt-12 pb-10 relative z-10" id="hero">
+      <div class="text-[11px] mono uppercase tracking-[0.3em] text-pearl/30 mb-6 opacity-0 translate-y-4" id="hero-tag">
+        PULSE / SAFETY INTERFACE
+      </div>
+      <h1 class="text-6xl md:text-8xl font-black tracking-[-0.04em] mb-6 opacity-0 translate-y-10 leading-[0.9]">
+        Safe <span class="champagne-underline" id="title-underline">Walk</span>
+      </h1>
+      <p class="text-lg text-pearl/40 font-light max-w-lg opacity-0 translate-y-10 leading-relaxed" id="hero-subtitle">
+        Walk with confidence. Real-time tracking, instant SOS alerts, and community-powered safety — all in one
+        interface.
+      </p>
+    </header>
+
+    <!-- ═══════════════════════════════════════════════════════
+         BENTO GRID DASHBOARD
+         ═══════════════════════════════════════════════════════ -->
+    <section class="grid grid-cols-1 md:grid-cols-3 gap-[var(--bento-gap)] mb-16" id="bento-grid">
+
+      <!-- BENTO: Map (Spans 2 Columns) -->
+      <div class="md:col-span-2 bento-card rounded-2xl overflow-hidden relative opacity-0 translate-y-10"
+        id="map-container">
+        <div id="map" class="w-full h-[500px]"></div>
+
+        <!-- Floating Control Panel -->
+        <div id="control-panel"
+          class="absolute bottom-6 left-1/2 -translate-x-1/2 w-[92%] md:w-[500px] bento-card p-6 z-[1000] transition-all duration-500">
+          <div class="flex gap-4 items-end">
+            <div class="flex-1 space-y-2 relative">
+              <label class="text-[10px] mono uppercase tracking-[0.2em] text-pearl/30 font-medium">Destination</label>
+              <input type="text" id="dest-input" placeholder="Search any place in India..."
+                class="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg px-4 py-2.5 text-sm text-pearl placeholder:text-pearl/20 focus:outline-none focus:border-champagne/30 transition-colors mono"
+                autocomplete="off">
+              <!-- Live Search Suggestions -->
+              <div id="search-suggestions"
+                class="hidden absolute top-full left-0 w-full mt-1 bg-[#0d1220] border border-white/[0.06] rounded-lg overflow-hidden z-[2000] max-h-[200px] overflow-y-auto">
+              </div>
+            </div>
+            <div class="flex gap-2">
+              <button id="start-btn"
+                class="px-6 py-2.5 bg-champagne text-navy text-sm font-bold rounded-lg hover:bg-white hover:scale-[1.02] transition-all duration-200">
+                Start
+              </button>
+              <button id="stop-btn"
+                class="hidden px-6 py-2.5 bg-white/[0.06] text-pearl text-sm font-bold rounded-lg border border-white/[0.06] hover:bg-rose/20 hover:border-rose/30 hover:text-rose transition-all duration-200">
+                Stop
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BENTO: Stats Column -->
+      <div class="flex flex-col gap-[var(--bento-gap)]">
+
+        <!-- Stat: ETA -->
+        <div class="bento-card rounded-2xl p-6 flex-1 opacity-0 translate-y-10" id="bento-eta">
+          <p class="text-[10px] mono uppercase tracking-[0.2em] text-pearl/30 mb-3">ETA</p>
+          <p id="eta-display" class="text-4xl font-black tracking-tight">--:--</p>
+          <p class="text-xs text-pearl/20 mt-2 mono">Estimated arrival</p>
+        </div>
+
+        <!-- Stat: Distance -->
+        <div class="bento-card rounded-2xl p-6 flex-1 opacity-0 translate-y-10" id="bento-dist">
+          <p class="text-[10px] mono uppercase tracking-[0.2em] text-pearl/30 mb-3">Distance</p>
+          <p id="dist-display" class="text-4xl font-black tracking-tight">0.0 <span
+              class="text-lg text-pearl/40">km</span></p>
+          <p class="text-xs text-pearl/20 mt-2 mono">Total route length</p>
+        </div>
+
+        <!-- Stat: Safety Score -->
+        <div class="bento-card rounded-2xl p-6 flex-1 opacity-0 translate-y-10" id="bento-safety">
+          <p class="text-[10px] mono uppercase tracking-[0.2em] text-pearl/30 mb-3">Safety Score</p>
+          <p class="text-4xl font-black tracking-tight text-champagne">92<span class="text-lg text-pearl/40">%</span>
+          </p>
+          <p class="text-xs text-pearl/20 mt-2 mono">Route confidence</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════════
+         HORIZONTAL CAROUSEL
+         ═══════════════════════════════════════════════════════ -->
+    <section class="carousel-section">
+      <div class="carousel-sticky">
+        <div id="carousel-track" class="carousel-track">
+          <!-- Card 1 -->
+          <div class="carousel-card">
+            <div class="text-champagne mono font-bold text-4xl mb-4">01</div>
+            <h3 class="text-3xl font-black tracking-tight mb-4">Live Monitoring</h3>
+            <p class="text-pearl/40 leading-relaxed text-base">Your route is tracked in real-time, ensuring help is
+              always
+              within reach if you deviate or stop.</p>
+          </div>
+          <!-- Card 2 -->
+          <div class="carousel-card">
+            <div class="text-rose mono font-bold text-4xl mb-4">02</div>
+            <h3 class="text-3xl font-black tracking-tight mb-4">Safe Zones</h3>
+            <p class="text-pearl/40 leading-relaxed text-base">Our AI identifies secure corridors and warns you of
+              high-risk areas before you enter them.</p>
+          </div>
+          <!-- Card 3 -->
+          <div class="carousel-card">
+            <div class="text-pearl/20 mono font-bold text-4xl mb-4">03</div>
+            <h3 class="text-3xl font-black tracking-tight mb-4">Community Trust</h3>
+            <p class="text-pearl/40 leading-relaxed text-base">Connect with local volunteers who act as virtual
+              guardians
+              during your journey.</p>
+          </div>
+          <!-- Card 4 -->
+          <div class="carousel-card">
+            <div class="text-champagne mono font-bold text-4xl mb-4">04</div>
+            <h3 class="text-3xl font-black tracking-tight mb-4">Instant SOS</h3>
+            <p class="text-pearl/40 leading-relaxed text-base">One tap triggers a full emergency protocol, notifying
+              authorities and emergency contacts.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- SOS Button -->
+  <button id="sos-btn"
+    class="fixed bottom-10 right-10 w-16 h-16 bg-rose rounded-2xl flex items-center justify-center text-navy shadow-lg z-[2000] dusty-pulse hover:scale-105 active:scale-95 transition-all duration-200 transform translate-y-20 opacity-0 group border border-rose/50">
+    <span class="font-black text-sm tracking-tight">SOS</span>
+    <div class="absolute inset-0 bg-rose rounded-2xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity">
+    </div>
+  </button>
+
+  <script>
+      // --- THREE.JS BACKGROUND ---
+      (function () {
+        const vertexShader = `
+            uniform float uTime;
+            varying vec2 vUv;
+            varying float vElevation;
+            void main() {
+            vUv = uv;
+            vec3 pos = position;
+            float wave1 = sin(pos.x * 0.8 + uTime * 0.9) * 0.45;
+            wave1 += sin(pos.y * 0.6 + uTime * 0.7) * 0.35;
+            float wave2 = sin(pos.x * 1.5 + pos.y * 1.2 + uTime * 1.2) * 0.25;
+            float wave3 = sin(pos.x * 3.0 + uTime * 1.8) * 0.1;
+            wave3 += cos(pos.y * 2.5 + uTime * 1.2) * 0.1;
+            float wave4 = sin((pos.x + pos.y) * 0.5 + uTime * 0.5) * 0.25;
+            float elevation = wave1 + wave2 + wave3 + wave4;
+            pos.z += elevation;
+            vElevation = elevation;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+            }
+        `;
+        const fragmentShader = `
+            uniform vec3 uColor1;
+            uniform vec3 uColor2;
+            uniform vec3 uColor3;
+            uniform float uOpacity;
+            uniform float uTime;
+            varying vec2 vUv;
+            varying float vElevation;
+            void main() {
+            float mixFactor = smoothstep(-0.3, 0.4, vElevation);
+            vec3 color = mix(uColor1, uColor2, mixFactor);
+            float peakFactor = smoothstep(0.2, 0.5, vElevation);
+            color = mix(color, uColor3, peakFactor * 0.2);
+            float shimmer = sin(vUv.x * 30.0 + uTime * 1.2) * sin(vUv.y * 25.0 + uTime * 1.0);
+            shimmer = smoothstep(0.6, 1.0, shimmer) * 0.12;
+            color += vec3(shimmer) * uColor3;
+            float edgeFade = smoothstep(0.0, 0.15, vUv.x) * smoothstep(1.0, 0.85, vUv.x)
+                           * smoothstep(0.0, 0.15, vUv.y) * smoothstep(1.0, 0.85, vUv.y);
+            gl_FragColor = vec4(color, uOpacity * edgeFade);
+            }
+        `;
+
+        function initBackground() {
+          const container = document.getElementById('bg3d');
+          if (!container || typeof THREE === 'undefined') return;
+
+          const scene = new THREE.Scene();
+          const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 50);
+          camera.position.set(0, 3, 7);
+
+          const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+          renderer.setSize(window.innerWidth, window.innerHeight);
+          renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
+          container.appendChild(renderer.domElement);
+
+          const waterGeo = new THREE.PlaneGeometry(25, 25, 128, 128);
+          const waterMat = new THREE.ShaderMaterial({
+            uniforms: {
+              uTime: { value: 0 },
+              uColor1: { value: new THREE.Color(0x0a1628) },
+              uColor2: { value: new THREE.Color(0x1a3a6a) },
+              uColor3: { value: new THREE.Color(0xF7D794) },
+              uOpacity: { value: 0.55 },
+            },
+            vertexShader: vertexShader,
+            fragmentShader: fragmentShader,
+            transparent: true,
+            depthWrite: false,
+          });
+
+          const waterMesh = new THREE.Mesh(waterGeo, waterMat);
+          waterMesh.rotation.set(-Math.PI / 2.5, 0, Math.PI / 8);
+          waterMesh.position.set(0, -1, 0);
+          scene.add(waterMesh);
+
+          const clock = new THREE.Clock();
+          function animate() {
+            requestAnimationFrame(animate);
+            waterMat.uniforms.uTime.value = clock.getElapsedTime();
+            renderer.render(scene, camera);
+          }
+          animate();
+
+          window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+          });
+        }
+        window.addEventListener('load', initBackground);
+      })();
+  </script>
+
+  <!-- Alert Toast -->
+  <div id="alert-toast"
+    class="fixed top-24 left-1/2 -translate-x-1/2 bento-card border-rose/30 py-3 px-6 z-[3000] transform -translate-y-20 opacity-0 transition-all duration-500 pointer-events-none">
+    <div class="flex items-center gap-3 text-rose">
+      <div class="w-2 h-2 rounded-full bg-rose animate-pulse"></div>
+      <span class="font-medium tracking-tight text-sm">Warning: User stopped moving</span>
+    </div>
+  </div>
+
+  <!-- Emergency Modal -->
+  <div id="modal-overlay"
+    class="fixed inset-0 bg-navy/80 backdrop-blur-2xl z-[5000] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-500">
+    <div class="bento-card max-w-md w-full p-10 border-rose/20 text-center rounded-2xl">
+      <div class="w-16 h-16 bg-rose/10 border border-rose/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+        <span class="text-rose text-2xl font-black">!</span>
+      </div>
+      <h2 class="text-2xl font-black tracking-tight mb-3">Emergency Protocol</h2>
+      <p class="text-pearl/40 mb-8 leading-relaxed text-sm">Local authorities and emergency contacts have been notified
+        of your
+        location.</p>
+      <button id="close-modal"
+        class="w-full bg-white/[0.03] border border-white/[0.06] py-3 rounded-xl hover:bg-white/[0.06] transition-all font-bold text-sm">
+        I am safe
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       FULL-PAGE RED SOS OVERLAY
+       ═══════════════════════════════════════════════════════ -->
+  <div id="sos-countdown-modal"
+    class="hidden fixed inset-0 z-[8000] flex flex-col items-center justify-center opacity-0 pointer-events-none transition-all duration-300"
+    style="background: radial-gradient(ellipse at center, #ff0000, #8b0000, #1a0000);">
+
+    <!-- Pulsing Red Rings -->
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div class="w-[600px] h-[600px] rounded-full border-2 border-red-500/20 animate-ping"
+        style="animation-duration: 2s;"></div>
+    </div>
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div class="w-[400px] h-[400px] rounded-full border border-red-400/30 animate-ping"
+        style="animation-duration: 3s;"></div>
+    </div>
+
+    <!-- SOS Content -->
+    <div class="relative z-10 text-center">
+
+      <!-- Giant SOS Text -->
+      <div
+        class="text-[180px] md:text-[240px] font-black leading-none tracking-tight text-white/90 drop-shadow-[0_0_80px_rgba(255,0,0,0.8)]"
+        style="text-shadow: 0 0 60px rgba(255,0,0,0.6), 0 0 120px rgba(255,0,0,0.3); animation: sosPulse 1s ease-in-out infinite;">
+        SOS
+      </div>
+
+      <!-- Countdown Circle -->
+      <div class="relative w-24 h-24 mx-auto mt-8 mb-6">
+        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="6" />
+          <circle id="countdown-circle" cx="60" cy="60" r="54" fill="none" stroke="#ffffff" stroke-width="6"
+            stroke-linecap="round" stroke-dasharray="339.29" stroke-dashoffset="0"
+            style="transition: stroke-dashoffset 1s linear" />
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center">
+          <span id="sos-countdown-timer" class="text-3xl font-black text-white">30</span>
+        </div>
+      </div>
+
+      <!-- Warning Text -->
+      <p class="text-white/90 text-xl font-bold mb-1">You've been stationary too long</p>
+      <p class="text-white/50 text-sm mono mb-10">Emergency contacts will be alerted in
+        <span class="text-white font-bold" id="sos-countdown-text">30</span> seconds
+      </p>
+
+      <!-- Cancel Button -->
+      <button id="cancel-sos-btn" onclick="window.mapModule.cancelSOS()"
+        class="px-12 py-4 bg-white text-red-700 font-black text-lg rounded-2xl hover:bg-white/90 hover:scale-105 active:scale-95 transition-all duration-200 shadow-[0_0_40px_rgba(255,255,255,0.3)]">
+        I'M SAFE — CANCEL
+      </button>
+    </div>
+  </div>
+
+  <script src="map.js"></script>
+  <script src="ui.js"></script>
+  <script src="main.js"></script>
+</body>
+
+</html>

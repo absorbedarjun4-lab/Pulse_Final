@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SOS Emergency Alert — instant help when you need it most.">
+    <title>SOS — Emergency Alert</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/css/cursor.css">
+
+    <style>
+        :root {
+            --accent-primary: #F7D794;
+            --accent-secondary: #EDA6A3;
+            --accent-success: #b8e994;
+            --text-main: #FCFBFB;
+            --text-dim: rgba(252, 251, 251, 0.45);
+            --midnight-deep: #0e1b3d;
+            --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        body {
+            opacity: 0;
+            animation: pageReveal 1s var(--ease-out-expo) forwards;
+        }
+
+        @keyframes pageReveal {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* SOS Loading Overlay */
+        .sos-loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 15, 30, 0.98);
+            backdrop-filter: blur(20px);
+            z-index: 10000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.4s ease;
+        }
+
+        .sos-loading-overlay.active {
+            display: flex;
+        }
+
+        .bottle-container {
+            position: relative;
+            width: 100px;
+            height: 180px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.02);
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.1);
+        }
+
+        .bottle-container::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 20px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-bottom: none;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            margin-top: -24px;
+        }
+
+        .liquid {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%;
+            background: linear-gradient(to top, var(--accent-secondary), #0088ff);
+            transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 40px var(--accent-secondary);
+        }
+
+        .water-wave {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: rgba(255, 255, 255, 0.2);
+            top: -190%;
+            left: -50%;
+            border-radius: 40%;
+            animation: wave-rotate 5s infinite linear;
+        }
+
+        @keyframes wave-rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .success-check {
+            font-size: 3rem;
+            color: var(--accent-success);
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-top: 1rem;
+        }
+
+        .success-check.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+    </style>
+    <style>
+        /* ── PULSE Navbar ─────────────────────────────────────────────────────── */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.5rem;
+            height: 64px;
+            background: rgba(15, 28, 58, 0.72);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(247, 215, 148, 0.08);
+        }
+
+        /* Brand — left */
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+
+        .nav-hex {
+            font-size: 1.2rem;
+            color: #F7D794;
+            filter: drop-shadow(0 0 6px rgba(247, 215, 148, 0.5));
+            animation: hexPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes hexPulse {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 5px rgba(247, 215, 148, 0.35));
+            }
+
+            50% {
+                filter: drop-shadow(0 0 12px rgba(247, 215, 148, 0.7));
+            }
+        }
+
+        .nav-logo {
+            font-family: 'Cormorant Garamond', 'Outfit', serif;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: 0.22em;
+            color: #F7D794;
+            text-transform: uppercase;
+        }
+
+        /* Nav links — center */
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .nav-link {
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: rgba(216, 214, 214, 0.55);
+            text-decoration: none;
+            transition: color 0.22s ease, opacity 0.22s ease;
+            white-space: nowrap;
+        }
+
+        .nav-link:hover,
+        .nav-link--active {
+            color: #F7D794;
+        }
+
+        /* Auth buttons — right */
+        .nav-auth {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        /* Ensure hero content clears the navbar */
+        .hero {
+            padding-top: 64px;
+        }
+
+        /* ── Modal System ──────────────────────────────────────────────────────── */
+        .modal {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.is-open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal__backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(8, 12, 25, 0.85);
+            backdrop-filter: blur(8px);
+        }
+
+        .modal__card {
+            position: relative;
+            z-index: 10;
+            width: 90%;
+            max-width: 480px;
+            background: var(--navy-deep, #0f1c3a);
+            border: 1px solid rgba(247, 215, 148, 0.15);
+            border-radius: 12px;
+            padding: 2.5rem;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .modal.is-open .modal__card {
+            transform: translateY(0);
+        }
+
+        .modal__close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: var(--pearl-dim, #d8d6d6);
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+
+        .modal__close:hover {
+            opacity: 1;
+        }
+
+        .modal__title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.75rem;
+            color: #F7D794;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal__subtitle {
+            font-size: 0.85rem;
+            color: rgba(216, 214, 214, 0.6);
+            margin-bottom: 2rem;
+        }
+
+        /* Contact Content */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .contact-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .contact-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: #EDA6A3;
+        }
+
+        .contact-value {
+            font-size: 0.9rem;
+            color: #FCFBFB;
+        }
+
+        /* Modal Forms */
+        .modal-form {
+            text-align: center;
+        }
+
+        .modal-field {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        .modal-field label {
+            display: block;
+            font-size: 0.75rem;
+            color: rgba(247, 215, 148, 0.7);
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-field textarea,
+        .credit-input {
+            width: 100%;
+            background: rgba(25, 42, 86, 0.4);
+            border: 1px solid rgba(247, 215, 148, 0.1);
+            border-radius: 6px;
+            padding: 0.75rem;
+            color: #FCFBFB;
+            font-family: inherit;
+        }
+
+        .modal-field textarea {
+            height: 80px;
+            resize: none;
+        }
+
+        /* Credits Content */
+        .credit-input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .credit-info {
+            list-style: none;
+            text-align: left;
+            font-size: 0.8rem;
+            color: rgba(216, 214, 214, 0.7);
+        }
+
+        .credit-info li {
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 640px) {
+            .nav-links {
+                display: none;
+            }
+
+            .site-header {
+                padding: 0 1.25rem;
+            }
+
+            .nav-logo {
+                font-size: 1.05rem;
+            }
+
+            .modal__card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+
+    <!-- Cormorant Garamond for brand name -->
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="loader.css">
+</head>
+
+<body style="overflow: hidden;">
+    <!-- ── Cinematic Rescue Loader ── -->
+    <div id="rescue-loader">
+        <div class="loader-status">SCANNING SURFACE...</div>
+        <div class="rope"></div>
+        <div class="man-container">
+            <svg class="man" viewBox="0 0 60 80" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="30" cy="15" r="10" />
+                <path d="M30,25 Q30,50 30,60 L20,80 M30,60 L40,80 M10,40 Q30,30 50,40" stroke="white" stroke-width="4"
+                    fill="none" stroke-linecap="round" />
+            </svg>
+        </div>
+        <div class="ocean">
+            <div class="wave"></div>
+            <div class="wave wave--two"></div>
+        </div>
+    </div>
+
+    <!-- ─── Wave Background Canvas ─────────────────── -->
+    <canvas id="wave-canvas" aria-hidden="true"></canvas>
+
+    <!-- ─── Ripple Overlay Canvas ──────────────────── -->
+    <canvas id="ripple-canvas" aria-hidden="true"></canvas>
+
+    <!-- ─── Boat Element ───────────────────────────── -->
+    <div class="boat" id="boat" aria-hidden="true">
+        <svg class="boat-svg" viewBox="0 0 120 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Hull -->
+            <path d="M10 48 Q15 62 60 62 Q105 62 110 48 L100 48 Q95 55 60 55 Q25 55 20 48 Z"
+                fill="rgba(247,215,148,0.85)" stroke="rgba(237,166,163,0.6)" stroke-width="1" />
+            <!-- Cabin -->
+            <rect x="40" y="35" width="30" height="14" rx="3" fill="rgba(25,42,86,0.9)" stroke="rgba(247,215,148,0.4)"
+                stroke-width="0.8" />
+            <!-- Window -->
+            <rect x="48" y="38" width="8" height="6" rx="1.5" fill="rgba(247,215,148,0.3)" />
+            <!-- Mast -->
+            <line x1="55" y1="8" x2="55" y2="35" stroke="rgba(252,251,251,0.5)" stroke-width="1.2" />
+            <!-- Sail -->
+            <path d="M57 10 L57 32 L80 28 Z" fill="rgba(252,251,251,0.12)" stroke="rgba(252,251,251,0.25)"
+                stroke-width="0.8" />
+            <!-- Person (silhouette) -->
+            <circle cx="45" cy="26" r="4.5" fill="rgba(237,166,163,0.7)" />
+            <path d="M45 30 L45 40 M40 34 L50 34 M43 40 L40 48 M47 40 L50 48" stroke="rgba(237,166,163,0.6)"
+                stroke-width="1.3" stroke-linecap="round" />
+        </svg>
+    </div>
+
+    <!-- ─── Navbar ─────────────────────────────────── -->
+    <header class="site-header" id="site-header">
+
+        <!-- LEFT: Brand -->
+        <div class="nav-brand">
+            <span class="nav-hex" aria-hidden="true">⬡</span>
+            <span class="nav-logo">PULSE</span>
+        </div>
+
+        <!-- CENTER: Navigation -->
+        <nav class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/testimonials" class="nav-link">Testimonials</a>
+            <a href="/contact-us" class="nav-link">Contact Us</a>
+            <a href="/safeWalk" class="nav-link nav-link--safewalk">Safe Walk</a>
+        </nav>
+
+        <!-- RIGHT: Auth CTA -->
+
+        <div class="nav-auth">
+            <a href="/auth" class="btn btn--primary" id="btn-get-started">Get Started</a>
+        </div>
+
+    </header>
+
+    <!-- ─── Hero ───────────────────────────────────── -->
+    <main class="hero" id="hero">
+        <div class="hero__content">
+
+            <!-- SOS Button + Rings wrapper -->
+            <div class="sos-wrapper" id="sos-wrapper">
+                <!-- Ambient rings (CSS only) -->
+                <div class="sos-rings" aria-hidden="true">
+                    <span class="ring ring--1"></span>
+                    <span class="ring ring--2"></span>
+                    <span class="ring ring--3"></span>
+                </div>
+
+                <!-- SOS Button -->
+                <button class="sos-btn" id="sos-btn" type="button" aria-label="Send SOS alert">
+                    <span class="sos-btn__label">SOS</span>
+                </button>
+            </div>
+
+            <!-- Tagline -->
+            <p class="hero__tagline">Press for immediate assistance</p>
+        </div>
+
+        <!-- Subtle bottom flourish -->
+        <div class="hero__footer" aria-hidden="true">
+            <span class="hero__divider"></span>
+        </div>
+    </main>
+
+    <!-- ─── How it Works ───────────────────────────── -->
+    <section class="section-container" id="how-it-works">
+        <div class="section-head">
+            <h2 class="section-title">Operational Protocol</h2>
+            <p class="section-subtitle">Seamless integration between distress signals and elite response coordination.
+            </p>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">⬢</div>
+                <h3 class="feature-title">Immediate SOS</h3>
+                <p class="feature-text">One touch initializes a secure, encrypted uplink to our global command center.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">✦</div>
+                <h3 class="feature-title">Live Tracking</h3>
+                <p class="feature-text">High-precision geolocation tracking ensures response teams find you with
+                    surgical accuracy.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">❖</div>
+                <h3 class="feature-title">Rescue Inbound</h3>
+                <p class="feature-text">Local elite units are dispatched immediately with full mission-critical
+                    intelligence.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── Statistics Banner ──────────────────────── -->
+    <section class="stats-banner">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <span class="stat-value">12K+</span>
+                <span class="stat-label">Lives Secured</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">02:40</span>
+                <span class="stat-label">Avg. Response Time</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value">24/7</span>
+                <span class="stat-label">Global Vigilance</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── Premium Features ───────────────────────── -->
+    <section class="section-container" id="features">
+        <div class="section-head">
+            <h2 class="section-title">Elite Support</h2>
+            <p class="section-subtitle">Advanced technology designed for absolute reliability in high-stakes
+                environments.</p>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">▣</div>
+                <h3 class="feature-title">Silent Alert</h3>
+                <p class="feature-text">Discreetly trigger alerts without alerting nearby threats, ensuring your safety.
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">◈</div>
+                <h3 class="feature-title">Quantum Encryption</h3>
+                <p class="feature-text">All communications are secured with state-of-the-art encryption protocols.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">▶</div>
+                <h3 class="feature-title">Multi-Node Relay</h3>
+                <p class="feature-text">Signals are routed through multiple satellite nodes for guaranteed delivery.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── Safe Walk Feature Section ─────────────────── -->
+    <section class="section-container" id="safewalk-section" style="position:relative; overflow:hidden;">
+        <!-- Subtle glow accent -->
+        <div
+            style="position:absolute;top:-80px;right:-100px;width:500px;height:500px;background:radial-gradient(circle,rgba(247,215,148,0.06) 0%,transparent 70%);pointer-events:none;">
+        </div>
+
+        <div class="section-head">
+            <div
+                style="display:inline-flex;align-items:center;gap:0.6rem;background:rgba(247,215,148,0.06);border:1px solid rgba(247,215,148,0.15);border-radius:999px;padding:0.35rem 1rem;margin-bottom:1.25rem;">
+                <span
+                    style="width:7px;height:7px;border-radius:50%;background:#F7D794;display:inline-block;animation:hexPulse 2s ease-in-out infinite;"></span>
+                <span
+                    style="font-size:0.65rem;letter-spacing:0.18em;text-transform:uppercase;color:#F7D794;font-weight:600;">New
+                    Feature</span>
+            </div>
+            <h2 class="section-title">Safe Walk</h2>
+            <p class="section-subtitle">Walk confidently. Real-time route tracking, safe-zone mapping, and an instant
+                SOS countdown — so you're never alone on the way home.</p>
+        </div>
+
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🗺</div>
+                <h3 class="feature-title">Live Route Tracking</h3>
+                <p class="feature-text">Your path is plotted on a real-time map. Any deviation or prolonged stop
+                    triggers an automated safety check.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛡</div>
+                <h3 class="feature-title">Safe Zones & Corridors</h3>
+                <p class="feature-text">Community-verified safe corridors are highlighted automatically. High-risk areas
+                    are flagged before you enter them.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⏱</div>
+                <h3 class="feature-title">SOS Countdown</h3>
+                <p class="feature-text">Stopped too long? A 30-second countdown alerts emergency contacts automatically
+                    unless you confirm you're safe.</p>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div style="display:flex;justify-content:center;margin-top:3rem;">
+            <a href="/safeWalk"
+                style="display:inline-flex;align-items:center;gap:0.75rem;padding:0.9rem 2.5rem;background:linear-gradient(135deg,rgba(247,215,148,0.12),rgba(247,215,148,0.06));border:1px solid rgba(247,215,148,0.25);border-radius:10px;color:#F7D794;font-size:0.85rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;text-decoration:none;transition:all 0.25s ease;"
+                onmouseover="this.style.background='linear-gradient(135deg,rgba(247,215,148,0.2),rgba(247,215,148,0.1))';this.style.borderColor='rgba(247,215,148,0.45)';this.style.transform='translateY(-2px)';"
+                onmouseout="this.style.background='linear-gradient(135deg,rgba(247,215,148,0.12),rgba(247,215,148,0.06))';this.style.borderColor='rgba(247,215,148,0.25)';this.style.transform='translateY(0)';">
+                <span>Launch Safe Walk</span>
+                <span style="font-size:1rem;">→</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- ─── Site Footer ────────────────────────────── -->
+    <footer class="site-footer">
+        <div class="footer-top">
+            <div class="footer-brand">
+                <span class="footer-logo">PULSE</span>
+                <p class="footer-desc">The world's most advanced emergency response infrastructure. Protecting what
+                    matters most, anywhere on the planet.</p>
+            </div>
+
+            <div class="footer-nav">
+                <div class="footer-col">
+                    <h4 class="footer-col-title">System</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" class="footer-link">Network Status</a></li>
+                        <li><a href="#" class="footer-link">Response Map</a></li>
+                        <li><a href="#" class="footer-link">Security Protocols</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4 class="footer-col-title">Legal</h4>
+                    <ul class="footer-links">
+                        <li><a href="#" class="footer-link">Privacy Policy</a></li>
+                        <li><a href="#" class="footer-link">Mission Terms</a></li>
+                        <li><a href="#" class="footer-link">Data Governance</a></li>
+                    </ul>
+                    <div class="footer-col">
+                        <h4 class="footer-col-title">Connect</h4>
+                        <ul class="footer-links">
+                            <li><a href="/testimonials" class="footer-link">Testimonials</a></li>
+                            <li><a href="/contact-us" class="footer-link">Contact Us</a></li>
+                            <li><a href="#" class="footer-link">Operational HQ</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p class="copyright">&copy; 2026 PULSE Crisis Management. All rights reserved.</p>
+                <div class="footer-socials">
+                    <a href="#" class="social-link">SIGNAL</a>
+                    <a href="#" class="social-link">TELEGRAM</a>
+                    <a href="#" class="social-link">ENCRYPTED</a>
+                </div>
+            </div>
+    </footer>
+
+
+    <!-- ─── Generic Modal System ─────────────────── -->
+    <div class="modal" id="info-modal" role="dialog" aria-modal="true" aria-hidden="true">
+        <div class="modal__backdrop" id="modal-backdrop"></div>
+        <div class="modal__card" id="modal-card">
+            <button class="modal__close" id="modal-close" type="button" aria-label="Close">&times;</button>
+            <div id="modal-content">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Templates (Hidden) -->
+    <template id="tmpl-contact">
+        <h2 class="modal__title">Contact Command</h2>
+        <p class="modal__subtitle">Direct line to emergency coordination.</p>
+        <div class="contact-grid">
+            <div class="contact-item">
+                <span class="contact-label">Hotline</span>
+                <span class="contact-value">000-PULSE-SOS</span>
+            </div>
+            <div class="contact-item">
+                <span class="contact-label">Secure Signal</span>
+                <span class="contact-value">hq@pulse.gov.int</span>
+            </div>
+        </div>
+        <form class="modal-form">
+            <div class="modal-field">
+                <label>Incident Brief</label>
+                <textarea placeholder="Specify coordinates or nature of emergency..."></textarea>
+            </div>
+            <button class="btn btn--primary btn--full" type="button">Transmit Signal</button>
+        </form>
+    </template>
+
+    <template id="tmpl-credits">
+        <h2 class="modal__title">Redeem Credits</h2>
+        <p class="modal__subtitle">Convert mission points to operational resources.</p>
+        <div class="credits-wrap">
+            <div class="credit-input-group">
+                <input type="text" placeholder="Enter voucher code..." class="credit-input">
+                <button class="btn btn--primary">Redeem</button>
+            </div>
+            <ul class="credit-info">
+                <li>• 500 Credits: Priority Response</li>
+                <li>• 1200 Credits: Aerial Reconnaissance</li>
+                <li>• 5000 Credits: Full Command Override</li>
+            </ul>
+        </div>
+    </template>
+
+    <!-- SOS Loading Overlay -->
+    <div id="sosLoadingOverlay" class="sos-loading-overlay">
+        <div class="bottle-container">
+            <div id="sosLiquid" class="liquid">
+                <div class="water-wave"></div>
+            </div>
+        </div>
+        <div id="sosSuccessCheck" class="success-check">✓</div>
+        <h2 id="sosStatusText" style="margin-top: 2rem; letter-spacing: 2px; font-size: 1rem; color: var(--text-main);">
+            BROADCASTING SIGNAL...</h2>
+        <p style="color: var(--text-dim); font-size: 0.85rem; margin-top: 0.5rem;">Connecting to nearest citizen
+            responder nodes</p>
+    </div>
+
+    <!-- ─── Scripts (order matters) ────────────────── -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="waves.js"></script>
+    <script src="ripples.js"></script>
+    <script src=" boat.js"></script>
+    <script src="script.js"></script>
+    <script src="/js/cursor.js"></script>
+    <script src="loader.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,159 @@
+/* loader.css */
+:root {
+    --loader-bg: #0A1228;
+    --water-color: #1E3A6E;
+    --man-color: #FCFBFB;
+    --rope-color: #F7D794;
+}
+
+#rescue-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--loader-bg);
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: opacity 1s ease-out, visibility 1s;
+}
+
+#rescue-loader.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* ─── Ocean ─── */
+.ocean {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 30vh;
+    background: var(--water-color);
+}
+
+.wave {
+    position: absolute;
+    bottom: 100%;
+    width: 200%;
+    height: 100px;
+    background: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none"><path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V95.8C57.05,115.32,126.88,114,183.17,91A255.33,255.33,0,0,1,321.39,56.44Z" fill="%231E3A6E"/></svg>');
+    background-size: 50% 100%;
+    animation: waveMove 10s linear infinite;
+}
+
+.wave--two {
+    height: 80px;
+    opacity: 0.5;
+    animation: waveMove 7s linear infinite reverse;
+}
+
+@keyframes waveMove {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+/* ─── Drowning Man ─── */
+.man-container {
+    position: absolute;
+    bottom: 25vh;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+}
+
+.man {
+    width: 60px;
+    height: 80px;
+    fill: var(--man-color);
+    animation: bobbing 3s ease-in-out infinite;
+    transition: transform 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes bobbing {
+
+    0%,
+    100% {
+        transform: translateY(0) rotate(5deg);
+    }
+
+    50% {
+        transform: translateY(15px) rotate(-5deg);
+    }
+}
+
+/* ─── Rescue Rope ─── */
+.rope {
+    position: absolute;
+    top: -100%;
+    left: 50%;
+    width: 4px;
+    height: 70vh;
+    background: var(--rope-color);
+    box-shadow: 0 0 15px rgba(247, 215, 148, 0.4);
+    transform: translateX(-50%);
+    transition: top 2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.rope::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 20px;
+    border: 4px solid var(--rope-color);
+    border-radius: 50%;
+    border-top-color: transparent;
+}
+
+/* ─── Rescue State ─── */
+#rescue-loader.rescue-active .rope {
+    top: 0;
+}
+
+#rescue-loader.pull-up .man-container {
+    transform: translate(-50%, -120vh);
+    transition: transform 2.5s cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+#rescue-loader.pull-up .rope {
+    top: -100vh;
+    transition: top 2.5s cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+/* ─── Text ─── */
+.loader-status {
+    position: absolute;
+    top: 20%;
+    font-family: 'Outfit', sans-serif;
+    color: var(--rope-color);
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    opacity: 0.6;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 0.3;
+    }
+
+    50% {
+        opacity: 0.8;
+    }
+}

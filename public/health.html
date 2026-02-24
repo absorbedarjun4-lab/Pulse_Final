@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Crisis Management Platform — System Health Status" />
+    <title>CRISIS OPS · System Health</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="/css/cursor.css" />
+
+    <style>
+        /* ── Variables & Reset ────────────────────────────────────── */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --navy: #192A56;
+            --navy-deep: #0f1c3a;
+            --navy-mid: #1e3366;
+            --champagne: #F7D794;
+            --champagne-dim: #d4b975;
+            --rose: #EDA6A3;
+            --pearl: #FCFBFB;
+            --pearl-dim: #d8d6d6;
+            --green: #7ecfa4;
+            --card-bg: rgba(24, 36, 78, 0.72);
+            --card-border: rgba(247, 215, 148, 0.14);
+            --radius: 8px;
+            --transition: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--pearl);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            overflow-x: hidden;
+        }
+
+        /* ── Background ───────────────────────────────────────────── */
+        .bg-gradient {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, #243d78 0%, transparent 60%),
+                radial-gradient(ellipse 70% 50% at 80% 90%, #162244 0%, transparent 55%),
+                radial-gradient(ellipse 90% 80% at 50% 50%, #192A56 30%, #0f1c3a 100%);
+        }
+
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(247, 215, 148, 0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(247, 215, 148, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: gridDrift 60s linear infinite;
+        }
+
+        @keyframes gridDrift {
+            from {
+                background-position: 0 0;
+            }
+
+            to {
+                background-position: 40px 40px;
+            }
+        }
+
+        /* ── Container ────────────────────────────────────────────── */
+        .health-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 560px;
+            animation: cardReveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        @keyframes cardReveal {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── Header ───────────────────────────────────────────────── */
+        .health-header {
+            text-align: center;
+            margin-bottom: 1.75rem;
+            animation: fadeDown 0.6s 0.1s both;
+        }
+
+        @keyframes fadeDown {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.7rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--pearl-dim);
+            opacity: 0.5;
+            text-decoration: none;
+            margin-bottom: 1.25rem;
+            transition: opacity var(--transition);
+        }
+
+        .back-link:hover {
+            opacity: 0.9;
+        }
+
+        .brand-icon {
+            font-size: 1.75rem;
+            color: var(--champagne);
+            filter: drop-shadow(0 0 8px rgba(247, 215, 148, 0.5));
+            display: block;
+            margin-bottom: 0.5rem;
+            animation: iconPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes iconPulse {
+
+            0%,
+            100% {
+                filter: drop-shadow(0 0 6px rgba(247, 215, 148, 0.35));
+            }
+
+            50% {
+                filter: drop-shadow(0 0 14px rgba(247, 215, 148, 0.65));
+            }
+        }
+
+        .page-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            letter-spacing: 0.18em;
+            color: var(--champagne);
+        }
+
+        .page-sub {
+            font-size: 0.68rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--pearl-dim);
+            opacity: 0.55;
+            margin-top: 0.3rem;
+        }
+
+        /* ── Overall Status Banner ────────────────────────────────── */
+        .status-banner {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 1.1rem 1.4rem;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            animation: fadeDown 0.6s 0.2s both;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 3px transparent;
+        }
+
+        .status-dot.ok {
+            background: var(--green);
+            animation: pulseDot 2s ease-in-out infinite;
+            box-shadow: 0 0 0 3px rgba(126, 207, 164, 0.15);
+        }
+
+        .status-dot.degraded {
+            background: var(--rose);
+            animation: pulseDot 1s ease-in-out infinite;
+            box-shadow: 0 0 0 3px rgba(237, 166, 163, 0.15);
+        }
+
+        .status-dot.loading {
+            background: var(--champagne);
+            animation: pulseDot 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulseDot {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.25);
+                opacity: 0.75;
+            }
+        }
+
+        .status-label {
+            flex: 1;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .status-time {
+            font-size: 0.65rem;
+            color: var(--pearl-dim);
+            opacity: 0.5;
+            text-align: right;
+            line-height: 1.4;
+        }
+
+        /* ── Cards Grid ───────────────────────────────────────────── */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius);
+            padding: 1.1rem 1.25rem;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            transition: border-color var(--transition);
+        }
+
+        .card:hover {
+            border-color: rgba(247, 215, 148, 0.28);
+        }
+
+        .card-title {
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--pearl-dim);
+            opacity: 0.55;
+            margin-bottom: 0.75rem;
+        }
+
+        .card-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid rgba(247, 215, 148, 0.05);
+            font-size: 0.78rem;
+            gap: 0.5rem;
+        }
+
+        .card-row:last-child {
+            border-bottom: none;
+        }
+
+        .card-key {
+            color: var(--pearl-dim);
+            opacity: 0.6;
+        }
+
+        .card-value {
+            font-weight: 500;
+            color: var(--pearl);
+            text-align: right;
+            word-break: break-all;
+        }
+
+        .card-value.ok {
+            color: var(--green);
+        }
+
+        .card-value.degraded {
+            color: var(--rose);
+        }
+
+        /* ── Refresh Button ───────────────────────────────────────── */
+        .refresh-row {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            animation: fadeDown 0.6s 0.5s both;
+        }
+
+        .refresh-btn {
+            padding: 0.65rem 1.5rem;
+            background: linear-gradient(135deg, var(--champagne) 0%, var(--champagne-dim) 100%);
+            border: none;
+            border-radius: 6px;
+            color: var(--navy-deep);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: box-shadow var(--transition), transform var(--transition);
+        }
+
+        .refresh-btn:hover {
+            box-shadow: 0 0 16px rgba(247, 215, 148, 0.3), 0 4px 12px rgba(0, 0, 0, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .refresh-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ── Footer ───────────────────────────────────────────────── */
+        .health-footer {
+            position: relative;
+            z-index: 1;
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 0.6rem;
+            align-items: center;
+            font-size: 0.62rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--pearl-dim);
+            opacity: 0.28;
+        }
+
+        /* ── Skeleton loader ──────────────────────────────────────── */
+        .skeleton {
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.05) 25%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.05) 75%);
+            background-size: 200% 100%;
+            border-radius: 4px;
+            height: 0.75rem;
+            width: 60%;
+            animation: shimmer 1.4s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: 200% 0;
+            }
+
+            100% {
+                background-position: -200% 0;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .health-container {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-gradient" aria-hidden="true"></div>
+    <div class="bg-grid" aria-hidden="true"></div>
+
+    <div class="health-container" role="main">
+        <!-- Header -->
+        <header class="health-header">
+            <a class="back-link" href="/">← Return to Login</a>
+            <span class="brand-icon" aria-hidden="true">⬡</span>
+            <h1 class="page-title">SYSTEM HEALTH</h1>
+            <p class="page-sub">Crisis Ops Platform · Diagnostics</p>
+        </header>
+
+        <!-- Status Banner -->
+        <div class="status-banner" id="status-banner" role="status" aria-live="polite">
+            <div class="status-dot loading" id="status-dot"></div>
+            <span class="status-label" id="status-label">Checking systems…</span>
+            <div class="status-time">
+                <div id="timestamp">—</div>
+                <div id="uptime">Uptime: —</div>
+            </div>
+        </div>
+
+        <!-- Cards -->
+        <div class="cards-grid">
+            <!-- Database Card -->
+            <div class="card">
+                <div class="card-title">Database</div>
+                <div class="card-row">
+                    <span class="card-key">State</span>
+                    <span class="card-value" id="db-state"><span class="skeleton"></span></span>
+                </div>
+                <div class="card-row">
+                    <span class="card-key">Host</span>
+                    <span class="card-value" id="db-host"><span class="skeleton"></span></span>
+                </div>
+                <div class="card-row">
+                    <span class="card-key">Name</span>
+                    <span class="card-value" id="db-name"><span class="skeleton"></span></span>
+                </div>
+            </div>
+
+            <!-- Server Card -->
+            <div class="card">
+                <div class="card-title">Server</div>
+                <div class="card-row">
+                    <span class="card-key">Node.js</span>
+                    <span class="card-value" id="srv-node"><span class="skeleton"></span></span>
+                </div>
+                <div class="card-row">
+                    <span class="card-key">Platform</span>
+                    <span class="card-value" id="srv-platform"><span class="skeleton"></span></span>
+                </div>
+                <div class="card-row">
+                    <span class="card-key">Memory</span>
+                    <span class="card-value" id="srv-memory"><span class="skeleton"></span></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Refresh -->
+        <div class="refresh-row">
+            <button class="refresh-btn" id="refresh-btn" onclick="fetchHealth()">↻ Refresh</button>
+        </div>
+    </div>
+
+    <footer class="health-footer" role="contentinfo">
+        <span>CRISIS OPS</span><span>·</span><span>Health Monitor</span><span>·</span><span>All activity logged</span>
+    </footer>
+
+    <script>
+        async function fetchHealth() {
+            const btn = document.getElementById('refresh-btn');
+            btn.textContent = '↻ Checking…';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/health/status');
+                const data = await res.json();
+
+                // Banner
+                const dot = document.getElementById('status-dot');
+                const label = document.getElementById('status-label');
+                dot.className = `status-dot ${data.status}`;
+                label.textContent = data.status === 'ok'
+                    ? '✔  All systems operational'
+                    : '⚠  System degraded — database unreachable';
+                label.style.color = data.status === 'ok' ? 'var(--green)' : 'var(--rose)';
+
+                // Timestamp & uptime
+                const ts = new Date(data.timestamp);
+                document.getElementById('timestamp').textContent =
+                    ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                document.getElementById('uptime').textContent = `Uptime: ${data.uptime}`;
+
+                // DB
+                const dbStateEl = document.getElementById('db-state');
+                dbStateEl.textContent = data.database.state;
+                dbStateEl.className = `card-value ${data.database.state === 'connected' ? 'ok' : 'degraded'}`;
+                document.getElementById('db-host').textContent = data.database.host;
+                document.getElementById('db-name').textContent = data.database.name;
+
+                // Server
+                document.getElementById('srv-node').textContent = data.server.node;
+                document.getElementById('srv-platform').textContent = data.server.platform;
+                document.getElementById('srv-memory').textContent = data.server.memory;
+
+            } catch (err) {
+                document.getElementById('status-label').textContent = '✖  Unable to reach server';
+                document.getElementById('status-label').style.color = 'var(--rose)';
+                document.getElementById('status-dot').className = 'status-dot degraded';
+            } finally {
+                btn.textContent = '↻ Refresh';
+                btn.disabled = false;
+            }
+        }
+
+        // Auto-fetch on load
+        fetchHealth();
+        // Auto-refresh every 30 seconds
+        setInterval(fetchHealth, 30000);
+    </script>
+    <script src="/js/cursor.js"></script>
+</body>
+
+</html>

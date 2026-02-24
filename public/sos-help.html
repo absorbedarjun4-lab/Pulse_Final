@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PULSE | Emergency Dispatch</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0F1C3A;
+            --gold: #F7D794;
+            --gold-muted: rgba(247, 215, 148, 0.4);
+            --pearl: #FCFBFB;
+            --pearl-dim: rgba(252, 251, 251, 0.6);
+            --emergency: #EDA6A3;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--midnight);
+            color: var(--pearl);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        /* ── Background Effects ── */
+        .bg-glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(247, 215, 148, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 1;
+            animation: pulse-glow 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        /* ── Content ── */
+        .content {
+            position: relative;
+            z-index: 10;
+            max-width: 600px;
+            padding: 2rem;
+        }
+
+        .status-container {
+            margin-bottom: 3rem;
+        }
+
+        .status-label {
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.4em;
+            text-transform: uppercase;
+            color: var(--emergency);
+            margin-bottom: 1rem;
+            display: block;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        .main-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: clamp(2.5rem, 8vw, 4rem);
+            font-weight: 700;
+            color: var(--gold);
+            line-height: 1;
+            margin-bottom: 1rem;
+        }
+
+        .sub-title {
+            font-size: 0.9rem;
+            color: var(--pearl-dim);
+            letter-spacing: 0.05em;
+            max-width: 400px;
+            margin: 0 auto 2rem;
+        }
+
+        /* ── Instructions ── */
+        .instructions {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(247, 215, 148, 0.1);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: left;
+            margin-top: 2rem;
+        }
+
+        .instruction-item {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .instruction-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .item-num {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            color: var(--gold);
+            opacity: 0.5;
+            font-size: 0.8rem;
+        }
+
+        .item-text h4 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--pearl);
+            margin-bottom: 0.25rem;
+        }
+
+        .item-text p {
+            font-size: 0.85rem;
+            color: var(--pearl-dim);
+            line-height: 1.5;
+        }
+
+        /* ── Radar Effect ── */
+        .radar {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vmax;
+            height: 100vmax;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px solid rgba(247, 215, 148, 0.1);
+            border-radius: 50%;
+            animation: radar-grow 4s linear infinite;
+        }
+
+        @keyframes radar-grow {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+
+            100% {
+                width: 100%;
+                height: 100%;
+                opacity: 0;
+            }
+        }
+
+        /* ── Action ── */
+        .return-home {
+            margin-top: 3rem;
+            display: inline-block;
+            color: var(--pearl-dim);
+            text-decoration: none;
+            font-size: 0.75rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            border-bottom: 1px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .return-home:hover {
+            color: var(--gold);
+            border-bottom-color: var(--gold);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-glow"></div>
+
+    <div class="radar">
+        <div class="circle" style="animation-delay: 0s;"></div>
+        <div class="circle" style="animation-delay: 1s;"></div>
+        <div class="circle" style="animation-delay: 2s;"></div>
+        <div class="circle" style="animation-delay: 3s;"></div>
+    </div>
+
+    <div class="content">
+        <div class="status-container">
+            <span class="status-label">Uplink Active • Tracking Initialized</span>
+            <h1 class="main-title">Sending Help</h1>
+            <p class="sub-title">Your signal has been prioritized. Elite units are being coordinated for immediate
+                dispatch.</p>
+        </div>
+
+        <div class="instructions">
+            <div class="instruction-item">
+                <span class="item-num">01</span>
+                <div class="item-text">
+                    <h4>Stay Calm</h4>
+                    <p>Maintain controlled breathing. You have established a direct link to operational command.</p>
+                </div>
+            </div>
+            <div class="instruction-item">
+                <span class="item-num">02</span>
+                <div class="item-text">
+                    <h4>Relocate to Safety</h4>
+                    <p>If the environment is compromised, move to the nearest secure, observable location.</p>
+                </div>
+            </div>
+            <div class="instruction-item">
+                <span class="item-num">03</span>
+                <div class="item-text">
+                    <h4>Clear Communication</h4>
+                    <p>Keep your device active as a beacon. Reserve battery for emergency mission updates.</p>
+                </div>
+            </div>
+            <div class="instruction-item">
+                <span class="item-num">04</span>
+                <div class="item-text">
+                    <h4>Signal Responders</h4>
+                    <p>When rescue units arrive, use a steady light source or bright physical signal to clarify
+                        position.</p>
+                </div>
+            </div>
+        </div>
+
+        <a href="/" class="return-home">Back to Command Center</a>
+    </div>
+
+    <script>
+        // Subtle interaction: tilt effect
+        document.addEventListener('mousemove', (e) => {
+            const content = document.querySelector('.content');
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+            content.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>⚡ SUPERNOVA — 3D Explosion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Segoe UI', system-ui, sans-serif
+        }
+
+        canvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5
+        }
+
+        /* Title */
+        #title {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+            animation: titleFloat 4s ease-in-out infinite;
+        }
+
+        #title h1 {
+            font-size: clamp(3.5rem, 11vw, 9rem);
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            background: linear-gradient(135deg, #ff6b00 0%, #ff0055 30%, #aa00ff 60%, #00d4ff 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradMove 3s ease-in-out infinite, popIn 1.2s cubic-bezier(.175, .885, .32, 1.275) forwards;
+            opacity: 0;
+        }
+
+        #title p {
+            margin-top: 14px;
+            font-size: clamp(0.7rem, 1.8vw, 1rem);
+            letter-spacing: 0.35em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.35);
+            animation: fadeUp 1.5s ease-out 0.6s forwards;
+            opacity: 0;
+        }
+
+        @keyframes gradMove {
+            0% {
+                background-position: 0% 50%
+            }
+
+            50% {
+                background-position: 100% 50%
+            }
+
+            100% {
+                background-position: 0% 50%
+            }
+        }
+
+        @keyframes popIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.4) rotate(-5deg);
+                filter: blur(30px)
+            }
+
+            60% {
+                opacity: 1;
+                transform: scale(1.05) rotate(1deg);
+                filter: blur(0)
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+                filter: blur(0)
+            }
+        }
+
+        @keyframes fadeUp {
+            0% {
+                opacity: 0;
+                transform: translateY(16px)
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        @keyframes titleFloat {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) translateY(0)
+            }
+
+            50% {
+                transform: translate(-50%, -50%) translateY(-8px)
+            }
+        }
+
+        /* Instructions */
+        #hint {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.25);
+            z-index: 10;
+            animation: fadeUp 2s ease-out 1.5s forwards, blink 2.5s ease-in-out 3s infinite;
+            opacity: 0;
+        }
+
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 0.25
+            }
+
+            50% {
+                opacity: 0.6
+            }
+        }
+
+        /* HUD */
+        #hud {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 28px;
+            align-items: center;
+            z-index: 10;
+            animation: fadeUp 2s ease-out 2s forwards;
+            opacity: 0;
+        }
+
+        .hv {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #fff;
+            text-align: center;
+            display: block;
+            line-height: 1
+        }
+
+        .hl {
+            font-size: 0.55rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.25);
+            margin-top: 3px;
+            display: block
+        }
+
+        .hdiv {
+            width: 1px;
+            height: 36px;
+            background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.12), transparent)
+        }
+
+        /* Corner brackets */
+        .corner {
+            position: fixed;
+            width: 55px;
+            height: 55px;
+            border-color: rgba(255, 100, 0, 0.45);
+            border-style: solid
+        }
+
+        .tl {
+            top: 20px;
+            left: 20px;
+            border-width: 2px 0 0 2px
+        }
+
+        .tr {
+            top: 20px;
+            right: 20px;
+            border-width: 2px 2px 0 0
+        }
+
+        .bl {
+            bottom: 20px;
+            left: 20px;
+            border-width: 0 0 2px 2px
+        }
+
+        .br {
+            bottom: 20px;
+            right: 20px;
+            border-width: 0 2px 2px 0
+        }
+
+        /* Scanlines */
+        #scan {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 4;
+            background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0, 0, 0, 0.06) 3px, rgba(0, 0, 0, 0.06) 4px);
+        }
+
+        /* Click flash */
+        #flash {
+            position: fixed;
+            inset: 0;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 20;
+            transition: opacity 0.05s
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="bg"></canvas>
+    <canvas id="particles"></canvas>
+    <div id="scan"></div>
+    <div id="overlay"></div>
+    <div id="flash"></div>
+
+    <div id="title">
+        <h1>SUPERNOVA</h1>
+        <p>Move cursor &nbsp;·&nbsp; Click to Explode</p>
+    </div>
+
+    <div id="hint">click anywhere to trigger supernova explosion</div>
+
+    <div id="hud">
+        <div class="hud-item">
+            <span class="hv" id="fps-val" style="color:#ff6b00">60</span>
+            <span class="hl">FPS</span>
+        </div>
+        <div class="hdiv"></div>
+        <div class="hud-item">
+            <span class="hv" id="p-val" style="color:#ff0055">25,000</span>
+            <span class="hl">Particles</span>
+        </div>
+        <div class="hdiv"></div>
+        <div class="hud-item">
+            <span class="hv" id="e-val" style="color:#aa00ff">0x</span>
+            <span class="hl">Explosions</span>
+        </div>
+        <div class="hdiv"></div>
+        <div class="hud-item">
+            <span class="hv" id="t-val" style="color:#00d4ff">0.0s</span>
+            <span class="hl">Runtime</span>
+        </div>
+    </div>
+
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+
+    <script>
+        // ════════════════════════════════════════════════════════
+        //  MIND-BLOWING SUPERNOVA — Pure Canvas + WebGL  
+        //  Zero dependencies | Works on file:// protocol
+        // ════════════════════════════════════════════════════════
+
+        const W = () => window.innerWidth;
+        const H = () => window.innerHeight;
+
+        // ─────────────────────────────────────────
+        // LAYER 1: WebGL background (shader-driven)
+        // ─────────────────────────────────────────
+        const bgCanvas = document.getElementById('bg');
+        const gl = bgCanvas.getContext('webgl') || bgCanvas.getContext('experimental-webgl');
+
+        function setupBg() {
+            bgCanvas.width = W(); bgCanvas.height = H();
+
+            const VS = `
+    attribute vec2 pos;
+    void main(){gl_Position=vec4(pos,0.,1.);}
+  `;
+            const FS = `
+    precision highp float;
+    uniform float uT;
+    uniform vec2  uRes;
+    uniform vec2  uMouse;
+    uniform float uBang;
+
+    #define PI 3.14159265359
+    #define TAU 6.28318530718
+
+    float hash(float n){return fract(sin(n)*43758.5453123);}
+    float hash2(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+
+    float noise(vec2 p){
+      vec2 i=floor(p), f=fract(p);
+      f=f*f*(3.-2.*f);
+      float a=hash2(i), b=hash2(i+vec2(1,0));
+      float c=hash2(i+vec2(0,1)), d=hash2(i+vec2(1,1));
+      return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);
+    }
+    float fbm(vec2 p){
+      float v=0.,a=0.5;
+      for(int i=0;i<6;i++){v+=a*noise(p);p*=2.1;a*=0.5;}
+      return v;
+    }
+
+    vec3 palette(float t){
+      vec3 a=vec3(0.5,0.0,0.5);
+      vec3 b=vec3(0.5,0.3,0.5);
+      vec3 c=vec3(1.0,0.7,1.0);
+      vec3 d=vec3(0.0,0.15,0.33);
+      return a+b*cos(TAU*(c*t+d));
+    }
+
+    void main(){
+      vec2 uv=(gl_FragCoord.xy-uRes*.5)/min(uRes.x,uRes.y);
+      vec2 mouse=(uMouse-uRes*.5)/min(uRes.x,uRes.y);
+      float t=uT;
+
+      // Polar coords
+      float r=length(uv);
+      float a=atan(uv.y,uv.x);
+
+      // Wormhole spiral
+      float worm=0.;
+      for(int i=0;i<5;i++){
+        float fi=float(i);
+        float spiral=sin(a*3.+t*1.2-r*8.+fi*1.2)*0.5+0.5;
+        float ring=exp(-abs(r-(0.15+fi*0.1))*15.);
+        worm+=spiral*ring*0.3;
+      }
+
+      // Nebula / gas clouds
+      vec2 np=uv*2.+vec2(t*0.03,t*0.02);
+      float neb=fbm(np+fbm(np+fbm(np)));
+      vec3 nebCol=palette(neb*0.7+t*0.05);
+
+      // Star field
+      vec2 starUV=gl_FragCoord.xy/40.;
+      float stars=pow(hash2(floor(starUV)),16.)*step(0.96,hash2(floor(starUV+vec2(0,1))));
+      stars*=0.6+0.4*sin(t*3.+hash2(floor(starUV))*TAU);
+
+      // Core glow
+      float core=exp(-r*r*8.)*(0.8+0.2*sin(t*5.));
+      vec3 coreCol=mix(vec3(1.,0.35,0.),vec3(0.5,0.,1.),sin(t*0.7)*0.5+0.5);
+
+      // Mouse attractor glow
+      float mDist=length(uv-mouse);
+      float mGlow=exp(-mDist*mDist*20.)*0.4;
+      vec3 mCol=mix(vec3(0.,0.8,1.),vec3(1.,0.,0.5),sin(t)*0.5+0.5);
+
+      // Explosion shockwave
+      float bang=uBang;
+      float shock=0.;
+      if(bang>0.){
+        float wave=exp(-abs(r-bang*1.2)*20.)*bang*(1.-bang);
+        shock=wave*3.;
+      }
+
+      // Compose
+      vec3 col=nebCol*neb*0.5;
+      col+=coreCol*core;
+      col+=worm*palette(r+t*0.1);
+      col+=stars;
+      col+=mCol*mGlow;
+      col+=shock*palette(r+t);
+
+      // Vignette
+      float vig=1.-smoothstep(0.5,1.2,r);
+      col*=vig*vig;
+
+      // Tone map
+      col=col/(col+vec3(0.5));
+      col=pow(col,vec3(0.85));
+
+      gl_FragColor=vec4(col,1.);
+    }
+  `;
+
+            function compile(type, src) {
+                const s = gl.createShader(type);
+                gl.shaderSource(s, src);
+                gl.compileShader(s);
+                return s;
+            }
+            const prog = gl.createProgram();
+            gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+            gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+            gl.linkProgram(prog);
+            gl.useProgram(prog);
+
+            const buf = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+            const posLoc = gl.getAttribLocation(prog, 'pos');
+            gl.enableVertexAttribArray(posLoc);
+            gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+            return {
+                uT: gl.getUniformLocation(prog, 'uT'),
+                uRes: gl.getUniformLocation(prog, 'uRes'),
+                uMouse: gl.getUniformLocation(prog, 'uMouse'),
+                uBang: gl.getUniformLocation(prog, 'uBang'),
+            };
+        }
+
+        let uniforms = setupBg();
+
+        // ─────────────────────────────────────────
+        // LAYER 2: Canvas 2D Particle System
+        // ─────────────────────────────────────────
+        const pCanvas = document.getElementById('particles');
+        const ctx = pCanvas.getContext('2d');
+
+        function resizeParticles() {
+            pCanvas.width = W(); pCanvas.height = H();
+        }
+        resizeParticles();
+
+        // Particle types
+        const TYPES = { ORBIT: 0, STREAM: 1, SPARK: 2, RING: 3 };
+        const COLORS = [
+            '#ff6b00', '#ff3d00', '#ff0055', '#d500ff',
+            '#7c00ff', '#2979ff', '#00d4ff', '#00ffd5',
+            '#ffcd00', '#ff8c00'
+        ];
+
+        class Particle {
+            constructor(type, cx, cy, boom) {
+                this.type = type;
+                this.cx = cx || W() / 2;
+                this.cy = cy || H() / 2;
+                this.reset(boom);
+            }
+
+            reset(boom) {
+                const cx = this.cx, cy = this.cy;
+                this.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                this.alpha = 0.5 + Math.random() * 0.5;
+                this.life = 0;
+                this.maxLife = 1;
+
+                if (this.type === TYPES.ORBIT) {
+                    this.angle = Math.random() * Math.PI * 2;
+                    this.radius = 80 + Math.random() * 200;
+                    this.speed = (Math.random() * 0.6 + 0.2) * (Math.random() < 0.5 ? 1 : -1);
+                    this.size = 1 + Math.random() * 3;
+                    this.orbitY = Math.random() * 0.4 + 0.2;
+                    this.x = cx + Math.cos(this.angle) * this.radius;
+                    this.y = cy + Math.sin(this.angle) * this.radius * this.orbitY;
+                    this.maxLife = Infinity;
+
+                } else if (this.type === TYPES.STREAM) {
+                    this.angle = Math.random() * Math.PI * 2;
+                    const spread = 15 + Math.random() * 40;
+                    this.x = cx + (Math.random() - 0.5) * spread;
+                    this.y = cy + (Math.random() - 0.5) * spread;
+                    const dir = Math.random() * Math.PI * 2;
+                    const spd = 0.5 + Math.random() * 2;
+                    this.vx = Math.cos(dir) * spd;
+                    this.vy = Math.sin(dir) * spd;
+                    this.size = 0.5 + Math.random() * 2;
+                    this.maxLife = 80 + Math.random() * 120;
+
+                } else if (this.type === TYPES.SPARK) {
+                    // Explosion spark
+                    this.x = cx;
+                    this.y = cy;
+                    const dir = Math.random() * Math.PI * 2;
+                    const spd = boom ? (4 + Math.random() * 12) : (1 + Math.random() * 4);
+                    this.vx = Math.cos(dir) * spd;
+                    this.vy = Math.sin(dir) * spd;
+                    this.gravity = 0.05 + Math.random() * 0.05;
+                    this.size = boom ? (2 + Math.random() * 5) : (1 + Math.random() * 2);
+                    this.maxLife = boom ? (60 + Math.random() * 80) : (40 + Math.random() * 60);
+                    this.drag = 0.96;
+                    this.trail = [];
+
+                } else if (this.type === TYPES.RING) {
+                    this.x = cx; this.y = cy;
+                    this.radius = 0;
+                    this.maxRadius = 150 + Math.random() * 250;
+                    this.speed = 4 + Math.random() * 6;
+                    this.maxLife = this.maxRadius / this.speed;
+                }
+            }
+
+            update(dt) {
+                this.life++;
+                if (this.type === TYPES.ORBIT) {
+                    this.angle += 0.003 * this.speed;
+                    this.x = this.cx + Math.cos(this.angle) * this.radius;
+                    this.y = this.cy + Math.sin(this.angle) * this.radius * this.orbitY;
+                    // Drift slightly
+                    this.cx += (W() / 2 - this.cx) * 0.0005;
+                    this.cy += (H() / 2 - this.cy) * 0.0005;
+
+                } else if (this.type === TYPES.STREAM) {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.vy -= 0.005;
+                    this.alpha *= 0.985;
+
+                } else if (this.type === TYPES.SPARK) {
+                    this.trail.push({ x: this.x, y: this.y });
+                    if (this.trail.length > 12) this.trail.shift();
+                    this.vx *= this.drag;
+                    this.vy *= this.drag;
+                    this.vy += this.gravity;
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.alpha = 1 - (this.life / this.maxLife);
+                    this.size *= 0.99;
+
+                } else if (this.type === TYPES.RING) {
+                    this.radius += this.speed;
+                    this.alpha = 1 - (this.radius / this.maxRadius);
+                }
+            }
+
+            draw(ctx) {
+                if (this.type === TYPES.ORBIT) {
+                    ctx.globalAlpha = this.alpha * 0.8;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                    // Glow
+                    ctx.globalAlpha = this.alpha * 0.3;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+
+                } else if (this.type === TYPES.STREAM) {
+                    ctx.globalAlpha = this.alpha;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+
+                } else if (this.type === TYPES.SPARK) {
+                    // Draw trail
+                    if (this.trail.length > 1) {
+                        ctx.globalAlpha = this.alpha * 0.7;
+                        ctx.beginPath();
+                        ctx.moveTo(this.trail[0].x, this.trail[0].y);
+                        for (let i = 1; i < this.trail.length; i++) {
+                            ctx.lineTo(this.trail[i].x, this.trail[i].y);
+                        }
+                        ctx.lineTo(this.x, this.y);
+                        ctx.strokeStyle = this.color;
+                        ctx.lineWidth = this.size * 0.8;
+                        ctx.lineCap = 'round';
+                        ctx.stroke();
+                    }
+                    ctx.globalAlpha = this.alpha;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+
+                } else if (this.type === TYPES.RING) {
+                    ctx.globalAlpha = this.alpha * 0.8;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            isDead() {
+                if (this.type === TYPES.ORBIT) return false;
+                return this.life >= this.maxLife || this.alpha <= 0.01;
+            }
+        }
+
+        // Initialize particle pool
+        let particles = [];
+        const CX = W() / 2, CY = H() / 2;
+
+        // 800 orbital particles
+        for (let i = 0; i < 800; i++) {
+            particles.push(new Particle(TYPES.ORBIT, CX, CY, false));
+        }
+
+        // Continuous stream emitter
+        function emitStream(n) {
+            for (let i = 0; i < n; i++) {
+                particles.push(new Particle(TYPES.STREAM, CX + (Math.random() - 0.5) * 20, CY + (Math.random() - 0.5) * 20, false));
+            }
+        }
+
+        // ─── Shockwave rings ───
+        let sRings = [];
+        function addShockRings(x, y) {
+            for (let i = 0; i < 6; i++) {
+                const p = new Particle(TYPES.RING, x, y, true);
+                p.speed = 3 + i * 2.5;
+                p.maxRadius = 100 + i * 80;
+                p.maxLife = p.maxRadius / p.speed;
+                p.color = COLORS[i % COLORS.length];
+                sRings.push(p);
+            }
+        }
+
+        // ─── Explosion ───
+        let explodeCount = 0;
+        let bangProgress = 0;  // for WebGL shader
+        let bangDecay = 0;
+
+        function explode(x, y) {
+            explodeCount++;
+            document.getElementById('e-val').textContent = explodeCount + 'x';
+
+            bangProgress = 1;
+
+            // Flash
+            const flash = document.getElementById('flash');
+            flash.style.opacity = '0.35';
+            setTimeout(() => flash.style.opacity = '0', 80);
+
+            // 600 sparks
+            for (let i = 0; i < 600; i++) {
+                const p = new Particle(TYPES.SPARK, x, y, true);
+                p.color = COLORS[Math.floor(Math.random() * COLORS.length)];
+                particles.push(p);
+            }
+            addShockRings(x, y);
+        }
+
+        document.addEventListener('click', e => explode(e.clientX, e.clientY));
+
+        // ─── Mouse tracking ───
+        const mouse = { x: W() / 2, y: H() / 2, tx: W() / 2, ty: H() / 2 };
+        document.addEventListener('mousemove', e => { mouse.tx = e.clientX; mouse.ty = e.clientY; });
+
+        // ─── FPS ───
+        let lastT = performance.now(), frameCount = 0, fps = 60;
+
+        // ─── MAIN ANIMATION LOOP ───
+        let startTime = performance.now();
+
+        function frame() {
+            requestAnimationFrame(frame);
+
+            const now = performance.now();
+            const t = (now - startTime) / 1000;
+
+            // FPS
+            frameCount++;
+            if (now - lastT >= 1000) {
+                fps = frameCount; frameCount = 0; lastT = now;
+                document.getElementById('fps-val').textContent = fps;
+            }
+
+            // Runtime
+            document.getElementById('t-val').textContent = t.toFixed(1) + 's';
+
+            // Smooth mouse
+            mouse.x += (mouse.tx - mouse.x) * 0.06;
+            mouse.y += (mouse.ty - mouse.y) * 0.06;
+
+            // ── WebGL background ──
+            bgCanvas.width = W(); bgCanvas.height = H();
+            gl.viewport(0, 0, W(), H());
+            gl.uniform1f(uniforms.uT, t);
+            gl.uniform2f(uniforms.uRes, W(), H());
+            gl.uniform2f(uniforms.uMouse, mouse.x, H() - mouse.y);
+            gl.uniform1f(uniforms.uBang, bangProgress);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+            // Decay bang
+            if (bangProgress > 0) {
+                bangProgress -= 0.012;
+                if (bangProgress < 0) bangProgress = 0;
+            }
+
+            // ── Canvas 2D particles ──
+            pCanvas.width = W(); pCanvas.height = H();
+            ctx.clearRect(0, 0, W(), H());
+
+            // Emit streams continuously
+            if (Math.random() < 0.6) emitStream(3);
+
+            // Update + draw particles
+            let alive = [];
+            for (let p of particles) {
+                p.update();
+                if (!p.isDead()) {
+                    p.draw(ctx);
+                    alive.push(p);
+                }
+            }
+            particles = alive;
+
+            // Cap at 10k
+            if (particles.length > 10000) {
+                // Remove oldest non-orbit particles
+                let removed = 0;
+                particles = particles.filter(p => {
+                    if (removed < 500 && p.type !== TYPES.ORBIT) { removed++; return false; }
+                    return true;
+                });
+            }
+
+            document.getElementById('p-val').textContent = particles.length.toLocaleString();
+
+            // Shockwave rings
+            let rAlive = [];
+            for (let r of sRings) {
+                r.update();
+                if (!r.isDead()) { r.draw(ctx); rAlive.push(r); }
+            }
+            sRings = rAlive;
+
+            // Draw mouse glow on 2D canvas
+            const grad = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 60);
+            grad.addColorStop(0, 'rgba(0,212,255,0.15)');
+            grad.addColorStop(1, 'rgba(0,212,255,0)');
+            ctx.beginPath();
+            ctx.arc(mouse.x, mouse.y, 60, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            // Core pulse glow (center)
+            const cx = W() / 2, cy = H() / 2;
+            const pulse = 0.6 + 0.4 * Math.sin(t * 5);
+            const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, 80 * pulse);
+            cg.addColorStop(0, `rgba(255,${Math.floor(100 + 80 * Math.sin(t))},0,0.25)`);
+            cg.addColorStop(0.4, `rgba(180,0,255,0.1)`);
+            cg.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.beginPath();
+            ctx.arc(cx, cy, 80 * pulse, 0, Math.PI * 2);
+            ctx.fillStyle = cg;
+            ctx.fill();
+        }
+
+        frame();
+
+        // ─── Resize ───
+        window.addEventListener('resize', () => {
+            bgCanvas.width = W(); bgCanvas.height = H();
+            pCanvas.width = W(); pCanvas.height = H();
+            gl.viewport(0, 0, W(), H());
+            gl.uniform2f(uniforms.uRes, W(), H());
+        });
+    </script>
+</body>
+
+</html>

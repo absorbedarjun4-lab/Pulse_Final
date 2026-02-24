@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PULSE — Rescue Mission Lead Assessment</title>
+  <meta name="description"
+    content="Gamified assessment for aspiring Rescue Mission Leads. Evaluate decision-making, situational awareness, leadership, ethics, and disaster-response prioritization." />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <div class="mission-container">
+    <!-- Ambient Background -->
+    <div class="mission-bg">
+      <div class="radar-ring radar-ring--1"></div>
+      <div class="radar-ring radar-ring--2"></div>
+      <div class="radar-ring radar-ring--3"></div>
+      <div class="grid-overlay"></div>
+      <div class="vignette"></div>
+    </div>
+
+    <!-- HUD Bar -->
+    <header class="hud-bar">
+      <div class="hud-bar__left">
+        <span class="hud-dot"></span>
+        <span class="hud-label">RESCUE HQ</span>
+      </div>
+      <div>
+        <span class="hud-title">MISSION LEAD ASSESSMENT</span>
+      </div>
+      <div class="hud-bar__right">
+        <span class="hud-label hud-label--mono" id="hud-clock"></span>
+      </div>
+    </header>
+
+    <!-- Quiz Content -->
+    <main class="mission-content">
+      <div class="phase-wrapper" id="phase-wrapper"></div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>

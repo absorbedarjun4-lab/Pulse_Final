@@ -1,0 +1,337 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&family=Inter:wght@300;400;600;800;900&display=swap');
+
+:root {
+  --midnight-navy: #0a0e1a;
+  --champagne: #f7d794;
+  --dusty-rose: #eda6a3;
+  --pearl-white: #fcfbfb;
+  --glass-bg: rgba(255, 255, 255, 0.02);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --ease-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --bento-gap: 1rem;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--midnight-navy);
+  color: var(--pearl-white);
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.01em;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+.mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--midnight-navy);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ── Bento Card ── */
+.bento-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+.bento-card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Legacy Glass Card (fallback) ── */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+}
+
+/* ── Champagne Underline ── */
+.champagne-underline {
+  position: relative;
+  display: inline-block;
+}
+
+.champagne-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--champagne);
+  transition: width 0.8s ease-out;
+}
+
+.champagne-underline.active::after {
+  width: 100%;
+}
+
+/* ── SOS Pulse ── */
+.dusty-pulse {
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(237, 166, 163, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 12px rgba(237, 166, 163, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(237, 166, 163, 0);
+  }
+}
+
+/* ── Map ── */
+#map {
+  height: 500px;
+  width: 100%;
+  border-radius: 16px;
+}
+
+/* ── Status Dot ── */
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #4ade80;
+  display: inline-block;
+  margin-right: 6px;
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+/* ── Animated Background Layers ── */
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  will-change: transform;
+}
+
+.bg-orb--1 {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(247, 215, 148, 0.08) 0%, transparent 70%);
+  top: -10%;
+  right: -10%;
+  animation: orb-float-1 25s ease-in-out infinite;
+}
+
+.bg-orb--2 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(237, 166, 163, 0.05) 0%, transparent 70%);
+  bottom: -5%;
+  left: -8%;
+  animation: orb-float-2 30s ease-in-out infinite;
+}
+
+@keyframes orb-float-1 {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(-40px, 60px) scale(1.05);
+  }
+}
+
+@keyframes orb-float-2 {
+
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  50% {
+    transform: translate(60px, -40px) scale(1.08);
+  }
+}
+
+.bg-grain {
+  position: absolute;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 200px 200px;
+  opacity: 0.015;
+  animation: grain-shift 0.5s steps(4) infinite;
+  mix-blend-mode: overlay;
+}
+
+@keyframes grain-shift {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(3%, 3%);
+  }
+}
+
+.bg-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.25;
+}
+
+/* ── Horizontal Carousel ── */
+.carousel-section {
+  height: 400vh;
+  position: relative;
+  margin-top: 2rem;
+}
+
+.carousel-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.carousel-track {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0 10vw;
+  will-change: transform;
+}
+
+.carousel-card {
+  flex: 0 0 380px;
+  height: 460px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  transition: transform 0.4s var(--ease-expo), border-color 0.3s ease;
+}
+
+.carousel-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Search Suggestions ── */
+.search-suggestion-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  transition: background 0.15s ease;
+}
+
+.search-suggestion-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.search-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+/* ── Hide default Leaflet marker icon ── */
+.leaflet-div-icon {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.leaflet-marker-icon img,
+.leaflet-marker-shadow {
+  display: none !important;
+}
+
+.custom-div-icon,
+.dest-icon {
+  background: none !important;
+  border: none !important;
+}
+
+/* ── SOS Full-Page Overlay ── */
+@keyframes sosPulse {
+
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.03);
+  }
+}

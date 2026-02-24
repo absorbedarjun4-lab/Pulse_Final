@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description"
+        content="Crisis Management Platform — Secure Authentication Portal for Emergency Coordinators" />
+    <title>CRISIS OPS · Secure Access</title>
+
+    <!-- Fonts: Cormorant Garamond (headings) + DM Sans (body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/cursor.css" />
+</head>
+
+<body>
+
+    <!-- Background atmosphere layers -->
+    <div class="bg-layer bg-gradient" aria-hidden="true"></div>
+    <div class="bg-layer bg-grid" aria-hidden="true"></div>
+    <div class="bg-layer bg-vignette" aria-hidden="true"></div>
+
+    <main class="auth-container" role="main">
+        <!-- Header -->
+        <header class="auth-header">
+            <div class="brand-mark" aria-hidden="true">
+                <span class="brand-icon">⬡</span>
+            </div>
+            <h1 class="site-title">CRISIS OPS</h1>
+            <p class="site-subtitle">Emergency Management Platform</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <nav class="tab-nav" role="tablist" aria-label="Authentication mode">
+            <button class="tab-btn" id="tab-admin" role="tab" aria-selected="false" aria-controls="panel-admin"
+                data-tab="admin">
+                <span class="tab-icon" aria-hidden="true">⬡</span>
+                Admin
+            </button>
+            <button class="tab-btn active" id="tab-user-login" role="tab" aria-selected="true"
+                aria-controls="panel-user-login" data-tab="user-login">
+                User Login
+            </button>
+            <button class="tab-btn" id="tab-signup" role="tab" aria-selected="false" aria-controls="panel-signup"
+                data-tab="signup">
+                Register
+            </button>
+        </nav>
+
+        <!-- ── ADMIN LOGIN PANEL ───────────────────────────────────────── -->
+        <section class="form-panel admin-panel" id="panel-admin" role="tabpanel" aria-labelledby="tab-admin" hidden>
+            <div class="panel-badge admin-badge">
+                <span aria-hidden="true">⬡</span> ADMINISTRATOR
+            </div>
+
+            <form class="auth-form" id="form-admin" novalidate>
+                <div class="form-group">
+                    <label class="field-label" for="admin-email">Official Email</label>
+                    <input class="field-input" type="email" id="admin-email" name="email"
+                        placeholder="coordinator@agency.gov" autocomplete="email" required />
+                    <span class="field-error" id="admin-email-error" role="alert"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="field-label" for="admin-password">Access Code</label>
+                    <div class="input-wrapper">
+                        <input class="field-input" type="password" id="admin-password" name="password"
+                            placeholder="••••••••" autocomplete="current-password" required />
+                        <button type="button" class="toggle-pw" aria-label="Toggle password visibility"
+                            data-target="admin-password">
+                            <span class="eye-icon" aria-hidden="true">👁</span>
+                        </button>
+                    </div>
+                    <span class="field-error" id="admin-password-error" role="alert"></span>
+                </div>
+
+                <div class="form-message" id="admin-msg" role="status" aria-live="polite"></div>
+
+                <button class="submit-btn admin-submit" type="submit" id="btn-admin-login">
+                    <span class="btn-text">Authenticate</span>
+                    <span class="btn-loader" aria-hidden="true"></span>
+                </button>
+            </form>
+
+            <p class="access-note">Admin accounts are provisioned by the system administrator.</p>
+        </section>
+
+        <!-- ── USER LOGIN PANEL ───────────────────────────────────────── -->
+        <section class="form-panel active" id="panel-user-login" role="tabpanel" aria-labelledby="tab-user-login">
+            <form class="auth-form" id="form-user-login" novalidate>
+                <div class="form-group">
+                    <label class="field-label" for="user-email">Email Address</label>
+                    <input class="field-input" type="email" id="user-email" name="email" placeholder="you@example.com"
+                        autocomplete="email" required />
+                    <span class="field-error" id="user-email-error" role="alert"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="field-label" for="user-password">Password</label>
+                    <div class="input-wrapper">
+                        <input class="field-input" type="password" id="user-password" name="password"
+                            placeholder="••••••••" autocomplete="current-password" required />
+                        <button type="button" class="toggle-pw" aria-label="Toggle password visibility"
+                            data-target="user-password">
+                            <span class="eye-icon" aria-hidden="true">👁</span>
+                        </button>
+                    </div>
+                    <span class="field-error" id="user-password-error" role="alert"></span>
+                </div>
+
+                <div class="form-message" id="user-login-msg" role="status" aria-live="polite"></div>
+
+                <button class="submit-btn" type="submit" id="btn-user-login">
+                    <span class="btn-text">Sign In</span>
+                    <span class="btn-loader" aria-hidden="true"></span>
+                </button>
+            </form>
+
+            <p class="access-note">Don't have an account? <button class="link-btn" id="go-to-signup">Register
+                    here</button></p>
+        </section>
+
+        <!-- ── USER SIGNUP PANEL ──────────────────────────────────────── -->
+        <section class="form-panel" id="panel-signup" role="tabpanel" aria-labelledby="tab-signup" hidden>
+            <form class="auth-form" id="form-signup" novalidate>
+                <div class="form-group">
+                    <label class="field-label" for="signup-name">Full Name</label>
+                    <input class="field-input" type="text" id="signup-name" name="name" placeholder="Jane Coordinator"
+                        autocomplete="name" required />
+                    <span class="field-error" id="signup-name-error" role="alert"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="field-label" for="signup-email">Email Address</label>
+                    <input class="field-input" type="email" id="signup-email" name="email" placeholder="you@example.com"
+                        autocomplete="email" required />
+                    <span class="field-error" id="signup-email-error" role="alert"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="field-label" for="signup-password">Password</label>
+                    <div class="input-wrapper">
+                        <input class="field-input" type="password" id="signup-password" name="password"
+                            placeholder="Minimum 6 characters" autocomplete="new-password" required />
+                        <button type="button" class="toggle-pw" aria-label="Toggle password visibility"
+                            data-target="signup-password">
+                            <span class="eye-icon" aria-hidden="true">👁</span>
+                        </button>
+                    </div>
+                    <span class="field-error" id="signup-password-error" role="alert"></span>
+                    <div class="strength-bar" aria-hidden="true">
+                        <div class="strength-fill" id="strength-fill"></div>
+                    </div>
+                </div>
+
+                <div class="form-message" id="signup-msg" role="status" aria-live="polite"></div>
+
+                <button class="submit-btn" type="submit" id="btn-signup">
+                    <span class="btn-text">Create Account</span>
+                    <span class="btn-loader" aria-hidden="true"></span>
+                </button>
+            </form>
+
+            <p class="access-note">Already have an account? <button class="link-btn" id="go-to-login">Sign in
+                    here</button></p>
+        </section>
+
+        <!-- Success State -->
+        <div class="success-overlay" id="success-overlay" aria-live="assertive" hidden>
+            <div class="success-icon" aria-hidden="true">✔</div>
+            <p class="success-title" id="success-title">Access Granted</p>
+            <p class="success-sub" id="success-sub">Routing to command center…</p>
+        </div>
+
+    </main>
+
+    <footer class="auth-footer" role="contentinfo">
+        <span>CRISIS OPS &copy; 2026</span>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <span>Secure Channel</span>
+        <span class="footer-sep" aria-hidden="true">·</span>
+        <span>All activity logged</span>
+    </footer>
+
+    <script src="/js/auth.js"></script>
+    <script src="/js/cursor.js"></script>
+</body>
+
+</html>
